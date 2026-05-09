@@ -10,6 +10,8 @@
 </head>
 <body>
 
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -55,12 +57,15 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
-      <h1>Dashboard</h1>
-      <p>Welcome back — here's what's happening today</p>
+      <button class="hamburger" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
+      <div>
+        <h1>Dashboard</h1>
+        <p>Welcome back — here's what's happening today</p>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="date-chip" id="topDate"></div>
-      <button class="icon-btn">
+      <button class="icon-btn" style="display:none;">
         <i data-lucide="search" style="width:15px;height:15px;"></i>
       </button>
       <button class="icon-btn">
@@ -146,7 +151,7 @@
         <div class="chart-header">
           <div>
             <div class="chart-title">Revenue Overview</div>
-            <div class="chart-subtitle">Monthly collections in ₹ (Mock Demo Data)</div>
+            <div class="chart-subtitle">Monthly collections in ₹ (Last 6 Months)</div>
           </div>
           <div class="chart-tabs">
             <button class="chart-tab active">6M</button>
@@ -247,6 +252,11 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
 const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
 
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('mobile-open');
+  document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
 function calcExpiry(start, plan) {
   if (!start || !plan) return '—';
   const d = new Date(start);
@@ -272,6 +282,7 @@ function showToast(msg, type='success') {
 }
 
 let planChartInstance = null;
+let revenueChartInstance = null;
 
 async function loadDashboard() {
   try {
@@ -291,10 +302,23 @@ async function loadDashboard() {
     const expiringMembersList = [];
     
     const plansCount = { monthly: 0, quarterly: 0, half_yearly: 0, yearly: 0 };
+    
+    // Revenue Data calculation for past 6 months
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const revLabels = [];
+    const revData = [];
+    
+    for(let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      revLabels.push(monthNames[d.getMonth()]);
+      revData.push(0);
+    }
 
     members.forEach(m => {
       const start = new Date(m.start_date);
       const price = PLAN_PRICES[m.plan] || 0;
+      
+      // Calculate active plan KPI
       if (start >= thirtyDaysAgo) monthRev += price;
       
       if (m.status === 'active' && m.plan) {
@@ -305,6 +329,16 @@ async function loadDashboard() {
           if (daysLeft >= 0 && daysLeft <= 7) {
             expiringCount++;
             expiringMembersList.push({ ...m, daysLeft });
+          }
+        }
+      }
+      
+      // Revenue distribution for charts (counts start_date revenue)
+      if (m.status === 'active' && m.start_date) {
+        for(let i=0; i<6; i++) {
+          const targetMonthDate = new Date(now.getFullYear(), now.getMonth() - (5-i), 1);
+          if (start.getMonth() === targetMonthDate.getMonth() && start.getFullYear() === targetMonthDate.getFullYear()) {
+            revData[i] += price;
           }
         }
       }
@@ -386,6 +420,32 @@ async function loadDashboard() {
       }
     });
 
+    // Dynamic Revenue Chart
+    if (revenueChartInstance) revenueChartInstance.destroy();
+    const rCtx = document.getElementById('revenueChart').getContext('2d');
+    revenueChartInstance = new Chart(rCtx, {
+      type: 'bar',
+      data: {
+        labels: revLabels,
+        datasets: [{
+          label: 'Revenue',
+          data: revData,
+          backgroundColor: (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+            g.addColorStop(0,'rgba(200,16,46,0.85)');
+            g.addColorStop(1,'rgba(200,16,46,0.2)');
+            return g;
+          },
+          borderRadius: 6, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:(ctx)=>'₹'+ctx.raw.toLocaleString('en-IN')}}},
+        scales:{x:{grid:{display:false},ticks:{color:'#8a8080',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8080',font:{size:11},callback:(v)=>'₹'+(v/1000)+'K'}}}
+      }
+    });
+
     lucide.createIcons();
   } catch(e) {
     console.error(e);
@@ -458,31 +518,6 @@ async function submitRenewal() {
     btn.disabled = false; btn.textContent = 'Confirm Renewal & Payment';
   }
 }
-
-// Revenue Chart
-const rCtx = document.getElementById('revenueChart').getContext('2d');
-new Chart(rCtx, {
-  type: 'bar',
-  data: {
-    labels: ['Dec','Jan','Feb','Mar','Apr','May'],
-    datasets: [{
-      label: 'Revenue',
-      data: [145000,162000,138000,175000,168000,184000],
-      backgroundColor: (ctx) => {
-        const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
-        g.addColorStop(0,'rgba(200,16,46,0.85)');
-        g.addColorStop(1,'rgba(200,16,46,0.2)');
-        return g;
-      },
-      borderRadius: 6, borderSkipped: false,
-    }]
-  },
-  options: {
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:(ctx)=>'₹'+ctx.raw.toLocaleString('en-IN')}}},
-    scales:{x:{grid:{display:false},ticks:{color:'#8a8080',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8080',font:{size:11},callback:(v)=>'₹'+(v/1000)+'K'}}}
-  }
-});
 
 loadDashboard();
 </script>

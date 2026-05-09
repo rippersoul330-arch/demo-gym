@@ -12,6 +12,7 @@
 </style>
 </head>
 <body>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -44,6 +45,7 @@
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
+      <button class="hamburger" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
       <h1>Settings</h1>
       <p>Configure gym profile</p>
     </div>
@@ -86,6 +88,8 @@ function saveSettings() {
 }
 
 loadSettings();
+
+function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('mobile-open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
 </script>
 </body>
 </html>
