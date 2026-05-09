@@ -6,6 +6,17 @@
 <title>GymPro Suite — Finance</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .filter-chips { display: flex; gap: var(--space-2); margin-top: var(--space-4); margin-bottom: var(--space-4); }
+  .chip { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .chip:hover { background: var(--surface-3); color: var(--text); }
+  .chip.active { background: var(--red-soft); color: var(--red); border-color: var(--red); }
+  .search-wrap { position: relative; width: 100%; max-width: 300px; }
+  .search-wrap input { padding-left: 36px; }
+  .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; }
+  
+  .controls-row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-5); flex-wrap: wrap; gap: var(--space-4); }
+</style>
 </head>
 <body>
 <!-- SIDEBAR -->
@@ -93,29 +104,81 @@
       </div>
     </div>
 
-    <!-- LISTS -->
-    <div class="bottom-row">
-      <!-- PENDING MEMBERS -->
-      <div class="list-card">
-        <div class="list-header">
-          <div class="list-title">Pending Payments</div>
-          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
+    <!-- UNIFIED PAYMENTS TABLE -->
+    <div class="list-card" style="margin-top: var(--space-4);">
+      <div class="list-header" style="margin-bottom: 0;">
+        <div class="list-title" style="font-size: var(--text-lg);">Payments Directory</div>
+      </div>
+      
+      <div class="controls-row">
+        <div class="search-wrap">
+          <i data-lucide="search"></i>
+          <input type="text" id="searchInput" placeholder="Search member by name..." oninput="renderTable()" />
         </div>
-        <div id="pendingContainer">Loading...</div>
+        <div class="filter-chips">
+          <button class="chip active" onclick="setFilter('all', this)">All</button>
+          <button class="chip" onclick="setFilter('active', this)">Paid</button>
+          <button class="chip" onclick="setFilter('pending', this)">Pending</button>
+          <button class="chip" onclick="setFilter('expired', this)">Overdue</button>
+        </div>
       </div>
 
-      <!-- OVERDUE MEMBERS -->
-      <div class="list-card">
-        <div class="list-header">
-          <div class="list-title">Overdue (Expired) Accounts</div>
-          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
-        </div>
-        <div id="overdueContainer">Loading...</div>
+      <div class="gym-table-container" style="margin-top: var(--space-2);">
+        <table class="gym-table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTableBody">
+            <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
   </div>
 </div>
+
+<!-- Renew Modal -->
+<div class="modal-overlay" id="renewModal">
+  <div class="modal">
+    <h2>↻ Renew Membership</h2>
+    <div style="margin-bottom: var(--space-4); font-size: var(--text-sm); color: var(--text-muted);">
+      Renewing for: <strong id="r_name" style="color: var(--text);"></strong>
+    </div>
+    <div class="form-group">
+      <label>New Membership Plan *</label>
+      <select id="r_plan" onchange="updateRenewFeeAndDate()">
+        <option value="monthly">Monthly</option>
+        <option value="quarterly">Quarterly (3 mo)</option>
+        <option value="half_yearly">Half-Yearly (6 mo)</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
+    <div class="form-group" style="background: var(--surface-2); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-md); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: 600;">Total Fee</span>
+      <span id="r_fee" style="font-size: var(--text-lg); font-family: var(--font-display); font-weight: 800; color: var(--red);">₹1,500</span>
+    </div>
+    <div class="form-group" style="margin-top: var(--space-4);">
+      <label>New Start Date *</label>
+      <input id="r_start" type="date" onchange="updateRenewFeeAndDate()"/>
+    </div>
+    <div class="form-group">
+      <label>New End Date</label>
+      <input id="r_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
+    </div>
+    <input type="hidden" id="r_id"/>
+    <button class="btn-primary" id="renewBtn" onclick="submitRenewal()" style="width: 100%; margin-top: var(--space-2);">Confirm Renewal & Payment</button>
+    <button class="btn-secondary" onclick="closeRenewModal()" style="width: 100%; margin-top: var(--space-2);">Cancel</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
 
 <script>
 lucide.createIcons();
@@ -129,102 +192,183 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
 
 const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
-
 const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
 
-function getInitials(name) {
-  return (name||'?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+let allMembers = [];
+let currentFilter = 'all';
+
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type==='error'?'error':'');
+  toast.innerHTML = `<i data-lucide="${type==='error'?'x-circle':'check-circle-2'}"></i> ${msg}`;
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
 }
 
 async function loadFinanceData() {
   try {
     const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
-    const members = await res.json();
+    allMembers = await res.json();
     
-    let monthRev = 0;
-    let yearRev = 0;
-    
-    let pendingTotal = 0;
-    let pendingMembers = [];
-    
-    let overdueTotal = 0;
-    let overdueMembers = [];
+    let monthRev = 0, yearRev = 0, pendingTotal = 0, overdueTotal = 0;
+    let pendingCount = 0, overdueCount = 0;
     
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    members.forEach(m => {
+    allMembers.forEach(m => {
       const price = PLAN_PRICES[m.plan] || 0;
-      
-      // Calculate Revenue based on Active status and start_date
       if (m.status === 'active' && m.start_date) {
         const startDate = new Date(m.start_date);
         if (startDate.getFullYear() === currentYear) {
           yearRev += price;
-          if (startDate.getMonth() === currentMonth) {
-            monthRev += price;
-          }
+          if (startDate.getMonth() === currentMonth) monthRev += price;
         }
       }
-      
-      // Calculate Pending
-      if (m.status === 'pending') {
-        pendingTotal += price;
-        pendingMembers.push(m);
-      }
-      
-      // Calculate Overdue (Expired)
-      if (m.status === 'expired') {
-        overdueTotal += price;
-        overdueMembers.push(m);
-      }
+      if (m.status === 'pending') { pendingTotal += price; pendingCount++; }
+      if (m.status === 'expired') { overdueTotal += price; overdueCount++; }
     });
     
-    // Update KPI UI
     document.getElementById('f_monthRev').textContent = formatINR(monthRev);
     document.getElementById('f_yearRev').textContent = formatINR(yearRev);
-    
     document.getElementById('f_pendingTotal').textContent = formatINR(pendingTotal);
-    document.getElementById('f_pendingCount').innerHTML = `<i data-lucide="users"></i> ${pendingMembers.length} member${pendingMembers.length !== 1 ? 's' : ''} haven't paid`;
-    
+    document.getElementById('f_pendingCount').innerHTML = `<i data-lucide="users"></i> ${pendingCount} member${pendingCount !== 1 ? 's' : ''} haven't paid`;
     document.getElementById('f_overdueTotal').textContent = formatINR(overdueTotal);
-    document.getElementById('f_overdueCount').innerHTML = `<i data-lucide="users"></i> ${overdueMembers.length} expired member${overdueMembers.length !== 1 ? 's' : ''} unpaid`;
+    document.getElementById('f_overdueCount').innerHTML = `<i data-lucide="users"></i> ${overdueCount} expired member${overdueCount !== 1 ? 's' : ''} unpaid`;
     
-    // Render Pending Members
-    const renderList = (arr, containerId) => {
-      const container = document.getElementById(containerId);
-      if (!arr.length) {
-        container.innerHTML = '<div style="color:var(--text-muted);font-size:var(--text-xs);">No members in this category.</div>';
-        return;
-      }
-      container.innerHTML = arr.slice(0, 8).map((m, i) => {
-        const colors = ['linear-gradient(135deg,#c8102e,#9e0b22)','linear-gradient(135deg,#5b9cf6,#2563eb)','linear-gradient(135deg,#f5a623,#c17d10)','linear-gradient(135deg,#4caf7d,#2e7d52)','linear-gradient(135deg,#a86fdf,#7c3aed)'];
-        const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
-        const priceStr = formatINR(PLAN_PRICES[m.plan] || 0);
-        return `
-          <div class="member-row">
-            <div class="member-avatar" style="background:${colors[i%colors.length]};">${getInitials(m.name)}</div>
-            <div class="member-info">
-              <div class="member-name">${m.name}</div>
-              <div class="member-plan"><i data-lucide="phone" style="width:10px;height:10px;display:inline-block;"></i> ${m.phone || 'No phone'}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-weight:600;font-size:var(--text-sm);color:var(--red);">${priceStr}</div>
-              <div style="font-size:10px;color:var(--text-muted);">${planLabel}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    };
-
-    renderList(pendingMembers, 'pendingContainer');
-    renderList(overdueMembers, 'overdueContainer');
-    
-    lucide.createIcons();
-
+    renderTable();
   } catch (e) {
-    console.error("Failed to load finance data:", e);
+    showToast("Failed to load data", "error");
+  }
+}
+
+function renderTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = allMembers.filter(m => {
+    if (currentFilter !== 'all' && m.status !== currentFilter) return false;
+    if (q && !(m.name||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('paymentsTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No members match your criteria.</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = filtered.map(m => {
+    const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
+    const priceStr = formatINR(PLAN_PRICES[m.plan] || 0);
+    const initials = (m.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    
+    let statusBadge = '';
+    let actionBtn = '';
+    
+    if (m.status === 'active') {
+      statusBadge = `<span class="badge" style="background:var(--green-soft);color:var(--green);">Paid</span>`;
+      actionBtn = `<span style="color:var(--green);font-weight:600;font-size:var(--text-xs);display:flex;align-items:center;gap:4px;"><i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Paid</span>`;
+    } else if (m.status === 'pending') {
+      statusBadge = `<span class="badge" style="background:var(--yellow-soft);color:var(--yellow);">Pending</span>`;
+      actionBtn = `<button class="btn-primary" style="padding:6px 14px;font-size:11px;" onclick="openRenewModal('${m.id}', '${(m.name||'').replace(/'/g, "\\'")}', '${m.plan}')">Collect Payment</button>`;
+    } else {
+      statusBadge = `<span class="badge" style="background:rgba(200,16,46,0.15);color:#ff6b6b;">Overdue</span>`;
+      actionBtn = `<button class="btn-primary" style="padding:6px 14px;font-size:11px;" onclick="openRenewModal('${m.id}', '${(m.name||'').replace(/'/g, "\\'")}', '${m.plan}')">Renew / Collect</button>`;
+    }
+
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text);">${initials}</div> 
+            <div style="font-weight:600;color:var(--text);">${m.name}</div>
+          </div>
+        </td>
+        <td style="color:var(--text-muted);font-size:var(--text-xs);">${planLabel}</td>
+        <td style="font-weight:600;color:var(--text);">${priceStr}</td>
+        <td>${statusBadge}</td>
+        <td>${actionBtn}</td>
+      </tr>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+/* RENEW MODAL LOGIC */
+function calcExpiry(start, plan) {
+  if (!start || !plan) return '—';
+  const d = new Date(start);
+  const map = { monthly: 30, quarterly: 90, half_yearly: 180, yearly: 365 };
+  d.setDate(d.getDate() + (map[plan] || 30));
+  return d.toISOString().split('T')[0];
+}
+
+function updateRenewFeeAndDate() {
+  const plan = document.getElementById('r_plan').value;
+  const start = document.getElementById('r_start').value;
+  
+  // Update Fee
+  const fee = formatINR(PLAN_PRICES[plan] || 0);
+  document.getElementById('r_fee').textContent = fee;
+  
+  // Update Date
+  if (start && plan) {
+    const end = calcExpiry(start, plan);
+    document.getElementById('r_end').value = end !== '—' ? end : '';
+  } else {
+    document.getElementById('r_end').value = '';
+  }
+}
+
+function openRenewModal(id, name, currentPlan) {
+  document.getElementById('r_id').value = id;
+  document.getElementById('r_name').textContent = name;
+  document.getElementById('r_plan').value = currentPlan || 'monthly';
+  document.getElementById('r_start').value = new Date().toISOString().split('T')[0];
+  
+  updateRenewFeeAndDate();
+  document.getElementById('renewModal').classList.add('active');
+}
+
+function closeRenewModal() {
+  document.getElementById('renewModal').classList.remove('active');
+}
+
+async function submitRenewal() {
+  const id = document.getElementById('r_id').value;
+  const plan = document.getElementById('r_plan').value;
+  const start = document.getElementById('r_start').value;
+  const end = document.getElementById('r_end').value;
+
+  if (!plan || !start) return showToast('Please fill in all fields', 'error');
+
+  const btn = document.getElementById('renewBtn');
+  btn.disabled = true; btn.textContent = 'Processing...';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/members?id=eq.${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ plan, start_date: start, end_date: end, status: 'active' })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    
+    showToast('Payment Collected & Renewed!');
+    closeRenewModal();
+    loadFinanceData();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Confirm Renewal & Payment';
   }
 }
 

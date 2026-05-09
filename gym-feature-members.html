@@ -7,15 +7,11 @@
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-  /* Additional styles specific to members page */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
   .grid.four { grid-template-columns: repeat(4, 1fr); }
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-6); margin-bottom: var(--space-6); }
   .form-card h2 { font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-5); color: var(--text); display: flex; align-items: center; gap: 8px;}
   .btn-row { margin-top: var(--space-5); display: flex; gap: var(--space-3); align-items: center; }
-  .msg { font-size: var(--text-xs); padding: 8px 14px; border-radius: var(--radius-sm); display: none; }
-  .msg.ok { background: var(--green-soft); color: var(--green); display: block; }
-  .msg.err { background: rgba(200,16,46,0.15); color: #ff6b6b; display: block; }
   
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); }
   .member-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-5); transition: box-shadow var(--transition), transform var(--transition); position: relative; overflow: hidden;}
@@ -48,7 +44,7 @@
       </svg>
     </div>
     <div>
-      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-text" id="sidebarGymName">GYMPRO</div>
       <div class="sidebar-logo-sub">Corp Management</div>
     </div>
   </div>
@@ -70,7 +66,6 @@
 
 <!-- MAIN -->
 <div class="main">
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
       <h1>Members</h1>
@@ -125,7 +120,7 @@
         <div>
           <label>Status</label>
           <select id="f_status">
-            <option value="active">Active</option>
+            <option value="active">Active (Paid)</option>
             <option value="pending">Pending</option>
             <option value="expired">Expired</option>
           </select>
@@ -133,7 +128,6 @@
       </div>
       <div class="btn-row">
         <button class="btn-primary" id="addBtn" onclick="addMember()">Add Member</button>
-        <div class="msg" id="msg"></div>
       </div>
     </div>
 
@@ -155,48 +149,55 @@
     </div>
     <div class="form-group">
       <label>New Membership Plan *</label>
-      <select id="r_plan" onchange="updateRenewEndDate()">
+      <select id="r_plan" onchange="updateRenewFeeAndDate()">
         <option value="monthly">Monthly</option>
         <option value="quarterly">Quarterly (3 mo)</option>
         <option value="half_yearly">Half-Yearly (6 mo)</option>
         <option value="yearly">Yearly</option>
       </select>
     </div>
-    <div class="form-group">
+    <div class="form-group" style="background: var(--surface-2); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-md); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: 600;">Total Fee</span>
+      <span id="r_fee" style="font-size: var(--text-lg); font-family: var(--font-display); font-weight: 800; color: var(--red);">₹1,500</span>
+    </div>
+    <div class="form-group" style="margin-top: var(--space-4);">
       <label>New Start Date *</label>
-      <input id="r_start" type="date" onchange="updateRenewEndDate()"/>
+      <input id="r_start" type="date" onchange="updateRenewFeeAndDate()"/>
     </div>
     <div class="form-group">
       <label>New End Date</label>
       <input id="r_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
     </div>
     <input type="hidden" id="r_id"/>
-    <button class="btn-primary" id="renewBtn" onclick="submitRenewal()" style="width: 100%; margin-top: var(--space-2);">Confirm Renewal</button>
+    <button class="btn-primary" id="renewBtn" onclick="submitRenewal()" style="width: 100%; margin-top: var(--space-2);">Confirm Renewal & Payment</button>
     <button class="btn-secondary" onclick="closeRenewModal()" style="width: 100%; margin-top: var(--space-2);">Cancel</button>
   </div>
 </div>
+
+<div id="toast-container"></div>
 
 <script>
 lucide.createIcons();
 
 document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
+document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
 
 const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
-const TABLE = 'members';
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
 
-const headers = {
-  'Content-Type': 'application/json',
-  'apikey': ANON_KEY,
-  'Authorization': 'Bearer ' + ANON_KEY,
-  'Prefer': 'return=representation'
-};
+const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
+const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
 
-function showMsg(text, type) {
-  const el = document.getElementById('msg');
-  el.textContent = text;
-  el.className = 'msg ' + type;
-  setTimeout(() => el.className = 'msg', 3000);
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type==='error'?'error':'');
+  toast.innerHTML = `<i data-lucide="${type==='error'?'x-circle':'check-circle-2'}"></i> ${msg}`;
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.remove(), 3000);
 }
 
 function initDate() {
@@ -206,7 +207,7 @@ function initDate() {
 }
 
 function getInitials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return (name||'?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
 function calcExpiry(start, plan) {
@@ -259,7 +260,7 @@ function renderCards(members) {
 
 async function loadMembers() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}?order=created_at.desc`, { headers });
+    const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     renderCards(data);
@@ -278,57 +279,36 @@ async function addMember() {
   const end = document.getElementById('f_end').value;
   const status = document.getElementById('f_status').value;
 
-  if (!name || !phone || !plan || !start) {
-    showMsg('Please fill in all required fields (*)', 'err');
-    return;
-  }
+  if (!name || !phone || !plan || !start) return showToast('Please fill in all required fields (*)', 'error');
 
   const btn = document.getElementById('addBtn');
-  btn.disabled = true;
-  btn.textContent = 'Adding...';
+  btn.disabled = true; btn.textContent = 'Adding...';
 
   const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, end_date: end, status };
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
+    const res = await fetch(`${SUPABASE_URL}/members`, { method: 'POST', headers, body: JSON.stringify(payload) });
     if (!res.ok) throw new Error(await res.text());
-    showMsg('✅ Member added successfully!', 'ok');
+    showToast('Member added successfully!');
     ['f_name','f_phone','f_email','f_dob'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f_plan').value = '';
     document.getElementById('f_status').value = 'active';
     initDate();
     loadMembers();
   } catch (e) {
-    showMsg('❌ Error: ' + e.message, 'err');
+    showToast(e.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Add Member';
+    btn.disabled = false; btn.textContent = 'Add Member';
   }
 }
 
-function openRenewModal(id, name, currentPlan) {
-  document.getElementById('r_id').value = id;
-  document.getElementById('r_name').textContent = name;
-  document.getElementById('r_plan').value = currentPlan || 'monthly';
-  
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('r_start').value = today;
-  
-  updateRenewEndDate();
-  document.getElementById('renewModal').classList.add('active');
-}
-
-function closeRenewModal() {
-  document.getElementById('renewModal').classList.remove('active');
-}
-
-function updateRenewEndDate() {
-  const start = document.getElementById('r_start').value;
+function updateRenewFeeAndDate() {
   const plan = document.getElementById('r_plan').value;
+  const start = document.getElementById('r_start').value;
+  
+  const fee = formatINR(PLAN_PRICES[plan] || 0);
+  document.getElementById('r_fee').textContent = fee;
+  
   if (start && plan) {
     const end = calcExpiry(start, plan);
     document.getElementById('r_end').value = end !== '—' ? end : '';
@@ -337,37 +317,44 @@ function updateRenewEndDate() {
   }
 }
 
+function openRenewModal(id, name, currentPlan) {
+  document.getElementById('r_id').value = id;
+  document.getElementById('r_name').textContent = name;
+  document.getElementById('r_plan').value = currentPlan || 'monthly';
+  document.getElementById('r_start').value = new Date().toISOString().split('T')[0];
+  
+  updateRenewFeeAndDate();
+  document.getElementById('renewModal').classList.add('active');
+}
+
+function closeRenewModal() { document.getElementById('renewModal').classList.remove('active'); }
+
 async function submitRenewal() {
   const id = document.getElementById('r_id').value;
   const plan = document.getElementById('r_plan').value;
   const start = document.getElementById('r_start').value;
   const end = document.getElementById('r_end').value;
 
-  if (!plan || !start) {
-    alert('Please fill in all required fields.');
-    return;
-  }
+  if (!plan || !start) return showToast('Please fill in all required fields.', 'error');
 
   const btn = document.getElementById('renewBtn');
-  btn.disabled = true;
-  btn.textContent = 'Renewing...';
+  btn.disabled = true; btn.textContent = 'Processing...';
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}?id=eq.${id}`, {
+    const res = await fetch(`${SUPABASE_URL}/members?id=eq.${id}`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ plan: plan, start_date: start, end_date: end, status: 'active' })
+      body: JSON.stringify({ plan, start_date: start, end_date: end, status: 'active' })
     });
     if (!res.ok) throw new Error(await res.text());
     
-    showMsg('✅ Membership renewed successfully!', 'ok');
+    showToast('Membership Renewed!');
     closeRenewModal();
     loadMembers();
   } catch (e) {
-    alert('❌ Error renewing: ' + e.message);
+    showToast(e.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Confirm Renewal';
+    btn.disabled = false; btn.textContent = 'Confirm Renewal & Payment';
   }
 }
 
