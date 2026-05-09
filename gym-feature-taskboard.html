@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymPro – Taskboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f0f0f0;min-height:100vh}
+  header{background:linear-gradient(135deg,#ff6b35,#f7c59f22);padding:24px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff15}
+  header .logo-container {display:flex;align-items:center;gap:16px;}
+  header h1{font-size:1.8rem;font-weight:800;background:linear-gradient(90deg,#ff6b35,#ffbe7b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  header span{font-size:.9rem;color:#aaa;margin-top:4px;display:block}
+  .logo{width:48px;height:48px;background:linear-gradient(135deg,#ff6b35,#ffbe7b);border-radius:14px;display:grid;place-items:center;font-size:1.5rem}
+  nav a {color: #f0f0f0; text-decoration: none; font-weight: 600; padding: 10px 18px; background: #ffffff12; border-radius: 12px; transition: all 0.2s; font-size: 0.9rem; border: 1px solid #ffffff0a;}
+  nav a:hover {background: #ffffff25; border-color: #ffffff20; transform: translateY(-1px);}
+  
+  main{max-width:1200px;margin:0 auto;padding:32px 20px}
+  
+  .board-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;}
+  .board-title {font-size: 1.4rem; font-weight: 700;}
+  
+  .board {display: flex; gap: 24px; overflow-x: auto; padding-bottom: 16px; min-height: 60vh;}
+  .column {background: #161616; border: 1px solid #ffffff12; border-radius: 20px; min-width: 320px; flex: 1; display: flex; flex-direction: column;}
+  .column-header {padding: 18px 20px; border-bottom: 1px solid #ffffff12; display: flex; justify-content: space-between; align-items: center;}
+  .column-title {font-weight: 700; font-size: 1.05rem; color: #ff6b35; display: flex; align-items: center; gap: 8px;}
+  .column-title::before {content: ''; display: block; width: 10px; height: 10px; border-radius: 50%; background: #ff6b35;}
+  .col-todo .column-title::before {background: #f87171;}
+  .col-prog .column-title::before {background: #fbbf24;}
+  .col-done .column-title::before {background: #4ade80;}
+  
+  .task-count {background: #ffffff12; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; color: #aaa;}
+  .task-list {padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 16px; transition: background 0.2s; border-radius: 0 0 20px 20px;}
+  .task-list.drag-over {background: #ffffff08;}
+  
+  .task-card {background: #1e1e1e; border: 1px solid #ffffff12; border-radius: 14px; padding: 18px; cursor: grab; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;}
+  .task-card:active {cursor: grabbing;}
+  .task-card:hover {border-color: #ff6b3550; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
+  .task-card.dragging {opacity: 0.5; transform: scale(0.98);}
+  
+  .task-title {font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #f0f0f0;}
+  .task-desc {font-size: 0.82rem; color: #aaa; margin-bottom: 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;}
+  .task-meta {display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;}
+  
+  .task-badge {padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;}
+  .badge-high {background: #dc262622; color: #f87171; border: 1px solid #dc262630;}
+  .badge-medium {background: #d9770622; color: #fbbf24; border: 1px solid #d9770630;}
+  .badge-low {background: #16a34a22; color: #4ade80; border: 1px solid #16a34a30;}
+  
+  .task-assignee {background: #333; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.6rem; color: #fff; border: 2px solid #1e1e1e;}
+  
+  .add-task-btn {background: transparent; border: 1px dashed #ffffff25; color: #aaa; padding: 14px; border-radius: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-size: 0.9rem; font-weight: 600; text-align: center; margin: 0 20px 20px 20px; display: block;}
+  .add-task-btn:hover {background: #ffffff0a; border-color: #ff6b35; color: #ff6b35;}
+  
+  /* Modal Styles */
+  .modal-overlay {position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: none; place-items: center; z-index: 100; opacity: 0; transition: opacity 0.2s;}
+  .modal-overlay.active {display: grid; opacity: 1;}
+  .modal {background: #161616; border: 1px solid #ffffff15; border-radius: 24px; padding: 32px; width: 90%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transform: translateY(20px); transition: transform 0.2s;}
+  .modal-overlay.active .modal {transform: translateY(0);}
+  
+  .modal h2 {font-size: 1.3rem; font-weight: 700; margin-bottom: 24px; color: #fff; display: flex; align-items: center; gap: 10px;}
+  .form-group {margin-bottom: 18px;}
+  label{font-size:.8rem;color:#aaa;font-weight:500;display:block;margin-bottom:6px}
+  input,textarea,select{width:100%;background:#0d0d0d;border:1px solid #ffffff20;border-radius:12px;padding:12px 16px;color:#f0f0f0;font-family:inherit;font-size:.9rem;outline:none;transition:border .2s; resize: vertical;}
+  input:focus,textarea:focus,select:focus{border-color:#ff6b35}
+  select option{background:#1a1a1a}
+  
+  .btn{background:linear-gradient(135deg,#ff6b35,#ff8c5a);border:none;color:#fff;font-weight:700;font-size:.95rem;padding:14px 28px;border-radius:12px;cursor:pointer;transition:all .2s;font-family:inherit; width: 100%; margin-top: 12px;}
+  .btn:hover{opacity:.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);}
+  .cancel-btn {background: transparent; color: #888; text-align: center; display: block; width: 100%; padding: 12px; margin-top: 8px; cursor: pointer; border: none; font-family: inherit; font-weight: 500;}
+  .cancel-btn:hover {color: #f0f0f0;}
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar {width: 8px; height: 8px;}
+  ::-webkit-scrollbar-track {background: #0d0d0d;}
+  ::-webkit-scrollbar-thumb {background: #333; border-radius: 4px;}
+  ::-webkit-scrollbar-thumb:hover {background: #444;}
+  
+  @media(max-width:768px) {
+    .board {flex-direction: column;}
+    .column {min-width: 100%;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-container">
+    <div class="logo">💪</div>
+    <div>
+      <h1>GymPro</h1>
+      <span>Task Management</span>
+    </div>
+  </div>
+  <nav>
+    <a href="index.html">← Back to Dashboard</a>
+  </nav>
+</header>
+
+<main>
+  <div class="board-header">
+    <div class="board-title">Staff Taskboard</div>
+  </div>
+
+  <div class="board">
+    <!-- To Do Column -->
+    <div class="column col-todo">
+      <div class="column-header">
+        <div class="column-title">To Do</div>
+        <div class="task-count" id="count-todo">0</div>
+      </div>
+      <div class="task-list" id="todo" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+        <!-- Tasks will be injected here -->
+      </div>
+      <button class="add-task-btn" onclick="openModal('todo')">+ Add Task</button>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="column col-prog">
+      <div class="column-header">
+        <div class="column-title">In Progress</div>
+        <div class="task-count" id="count-inprogress">0</div>
+      </div>
+      <div class="task-list" id="inprogress" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+      </div>
+      <button class="add-task-btn" onclick="openModal('inprogress')">+ Add Task</button>
+    </div>
+
+    <!-- Done Column -->
+    <div class="column col-done">
+      <div class="column-header">
+        <div class="column-title">Done</div>
+        <div class="task-count" id="count-done">0</div>
+      </div>
+      <div class="task-list" id="done" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+      </div>
+      <button class="add-task-btn" onclick="openModal('done')">+ Add Task</button>
+    </div>
+  </div>
+</main>
+
+<!-- Add Task Modal -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h2>📝 Create New Task</h2>
+    <div class="form-group">
+      <label>Task Title *</label>
+      <input type="text" id="t_title" placeholder="E.g., Repair treadmill #3"/>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="t_desc" rows="3" placeholder="Add details about this task..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <select id="t_priority">
+        <option value="low">Low Priority</option>
+        <option value="medium" selected>Medium Priority</option>
+        <option value="high">High Priority</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Assignee (Initials)</label>
+      <input type="text" id="t_assignee" placeholder="E.g., JD" maxlength="2"/>
+    </div>
+    
+    <input type="hidden" id="t_column"/>
+    
+    <button class="btn" onclick="saveTask()">Save Task</button>
+    <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+  // Initial state if empty
+  const defaultTasks = [
+    { id: 't1', title: 'Clean locker rooms', desc: 'Deep clean both men\'s and women\'s locker rooms. Restock supplies.', priority: 'high', assignee: 'JD', column: 'todo' },
+    { id: 't2', title: 'Fix broken AC', desc: 'Call technician to look at the AC unit near the free weights section.', priority: 'high', assignee: 'MS', column: 'inprogress' },
+    { id: 't3', title: 'Update member flyers', desc: 'Print the new promotional flyers for next month\'s membership drive.', priority: 'medium', assignee: 'AK', column: 'todo' },
+    { id: 't4', title: 'Inventory check', desc: 'Count remaining protein bars and shakes in the reception fridge.', priority: 'low', assignee: 'JD', column: 'done' }
+  ];
+
+  let tasks = [];
+
+  function init() {
+    const saved = localStorage.getItem('gymProTasks');
+    if (saved) {
+      tasks = JSON.parse(saved);
+    } else {
+      tasks = defaultTasks;
+      saveTasks();
+    }
+    renderAll();
+  }
+
+  function saveTasks() {
+    localStorage.setItem('gymProTasks', JSON.stringify(tasks));
+  }
+
+  function renderAll() {
+    const cols = ['todo', 'inprogress', 'done'];
+    cols.forEach(c => {
+      document.getElementById(c).innerHTML = '';
+      document.getElementById('count-' + c).textContent = '0';
+    });
+
+    tasks.forEach(task => {
+      const col = document.getElementById(task.column);
+      if (col) {
+        col.appendChild(createCard(task));
+      }
+    });
+
+    // Update counts
+    cols.forEach(c => {
+      const col = document.getElementById(c);
+      document.getElementById('count-' + c).textContent = col.children.length;
+    });
+  }
+
+  function createCard(task) {
+    const div = document.createElement('div');
+    div.className = 'task-card';
+    div.draggable = true;
+    div.id = task.id;
+    
+    // Setup drag events
+    div.addEventListener('dragstart', dragStart);
+    div.addEventListener('dragend', dragEnd);
+
+    // Get initials color hash
+    const colors = ['#f43f5e', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b'];
+    const charCode = task.assignee ? task.assignee.charCodeAt(0) || 0 : 0;
+    const bgColor = colors[charCode % colors.length];
+
+    div.innerHTML = `
+      <div class="task-title">${task.title}</div>
+      ${task.desc ? `<div class="task-desc">${task.desc}</div>` : ''}
+      <div class="task-meta">
+        <span class="task-badge badge-${task.priority}">${task.priority}</span>
+        ${task.assignee ? `<span class="task-assignee" style="background:${bgColor}">${task.assignee.toUpperCase()}</span>` : ''}
+      </div>
+    `;
+    
+    // Add delete functionality on double click (optional but good)
+    div.addEventListener('dblclick', () => {
+      if(confirm('Delete this task?')) {
+        tasks = tasks.filter(t => t.id !== task.id);
+        saveTasks();
+        renderAll();
+      }
+    });
+
+    return div;
+  }
+
+  // Drag & Drop Handlers
+  function dragStart(e) {
+    e.dataTransfer.setData('text/plain', e.target.id);
+    setTimeout(() => {
+      e.target.classList.add('dragging');
+    }, 0);
+  }
+
+  function dragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.task-list').forEach(list => list.classList.remove('drag-over'));
+  }
+
+  function dragEnter(e) {
+    e.preventDefault();
+    if(e.currentTarget.classList.contains('task-list')) {
+      e.currentTarget.classList.add('drag-over');
+    }
+  }
+
+  function dragLeave(e) {
+    if(e.currentTarget.classList.contains('task-list')) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+  }
+
+  function allowDrop(e) {
+    e.preventDefault();
+  }
+
+  function drop(e) {
+    e.preventDefault();
+    const list = e.currentTarget;
+    list.classList.remove('drag-over');
+    
+    const id = e.dataTransfer.getData('text/plain');
+    const draggableElement = document.getElementById(id);
+    const newColId = list.id;
+    
+    if (draggableElement && newColId) {
+      list.appendChild(draggableElement);
+      
+      // Update data
+      const taskIndex = tasks.findIndex(t => t.id === id);
+      if (taskIndex > -1) {
+        tasks[taskIndex].column = newColId;
+        saveTasks();
+        
+        // Update counts
+        const cols = ['todo', 'inprogress', 'done'];
+        cols.forEach(c => {
+          document.getElementById('count-' + c).textContent = document.getElementById(c).children.length;
+        });
+      }
+    }
+  }
+
+  // Modal Handlers
+  function openModal(columnId) {
+    document.getElementById('t_column').value = columnId;
+    document.getElementById('taskModal').classList.add('active');
+    document.getElementById('t_title').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('taskModal').classList.remove('active');
+    // Clear form
+    document.getElementById('t_title').value = '';
+    document.getElementById('t_desc').value = '';
+    document.getElementById('t_priority').value = 'medium';
+    document.getElementById('t_assignee').value = '';
+  }
+
+  function saveTask() {
+    const title = document.getElementById('t_title').value.trim();
+    if (!title) {
+      alert('Task title is required');
+      return;
+    }
+
+    const newTask = {
+      id: 't_' + Date.now(),
+      title: title,
+      desc: document.getElementById('t_desc').value.trim(),
+      priority: document.getElementById('t_priority').value,
+      assignee: document.getElementById('t_assignee').value.trim() || '',
+      column: document.getElementById('t_column').value
+    };
+
+    tasks.push(newTask);
+    saveTasks();
+    renderAll();
+    closeModal();
+  }
+
+  // Initial load
+  init();
+
+</script>
+</body>
+</html>
