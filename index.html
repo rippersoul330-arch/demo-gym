@@ -17,6 +17,7 @@
   .form-card h2{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#ff6b35}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .grid.three{grid-template-columns:1fr 1fr 1fr}
+  .grid.four{grid-template-columns:repeat(4, 1fr)}
   label{font-size:.78rem;color:#aaa;font-weight:500;display:block;margin-bottom:5px}
   input,select{width:100%;background:#0d0d0d;border:1px solid #ffffff20;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-family:inherit;font-size:.88rem;outline:none;transition:border .2s}
   input:focus,select:focus{border-color:#ff6b35}
@@ -50,7 +51,7 @@
   .count-pill{background:#161616;border:1px solid #ffffff12;border-radius:14px;padding:14px 20px;flex:1;text-align:center}
   .count-pill .num{font-size:1.8rem;font-weight:800;background:linear-gradient(90deg,#ff6b35,#ffbe7b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
   .count-pill .lbl{font-size:.75rem;color:#888;margin-top:2px}
-  @media(max-width:600px){.grid,.grid.three{grid-template-columns:1fr}.count-bar{flex-wrap:wrap}}
+  @media(max-width:600px){.grid,.grid.three,.grid.four{grid-template-columns:1fr}.count-bar{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -92,10 +93,10 @@
         <input id="f_dob" type="date"/>
       </div>
     </div>
-    <div class="grid three" style="margin-top:14px">
+    <div class="grid four" style="margin-top:14px">
       <div>
         <label>Membership Plan *</label>
-        <select id="f_plan">
+        <select id="f_plan" onchange="updateEndDate()">
           <option value="">Select plan</option>
           <option value="monthly">Monthly</option>
           <option value="quarterly">Quarterly (3 mo)</option>
@@ -105,7 +106,11 @@
       </div>
       <div>
         <label>Start Date *</label>
-        <input id="f_start" type="date"/>
+        <input id="f_start" type="date" onchange="updateEndDate()"/>
+      </div>
+      <div>
+        <label>End Date</label>
+        <input id="f_end" type="date" disabled style="opacity: 0.7; cursor: not-allowed;"/>
       </div>
       <div>
         <label>Status</label>
@@ -151,6 +156,7 @@ function showMsg(text, type) {
 function initDate() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f_start').value = today;
+  updateEndDate();
 }
 
 function getInitials(name) {
@@ -160,9 +166,20 @@ function getInitials(name) {
 function calcExpiry(start, plan) {
   if (!start || !plan) return '—';
   const d = new Date(start);
-  const map = { monthly: 1, quarterly: 3, half_yearly: 6, yearly: 12 };
-  d.setMonth(d.getMonth() + (map[plan] || 1));
+  const map = { monthly: 30, quarterly: 90, half_yearly: 180, yearly: 365 };
+  d.setDate(d.getDate() + (map[plan] || 30));
   return d.toISOString().split('T')[0];
+}
+
+function updateEndDate() {
+  const start = document.getElementById('f_start').value;
+  const plan = document.getElementById('f_plan').value;
+  if (start && plan) {
+    const end = calcExpiry(start, plan);
+    document.getElementById('f_end').value = end !== '—' ? end : '';
+  } else {
+    document.getElementById('f_end').value = '';
+  }
 }
 
 function renderCards(members) {
@@ -216,6 +233,7 @@ async function addMember() {
   const dob = document.getElementById('f_dob').value;
   const plan = document.getElementById('f_plan').value;
   const start = document.getElementById('f_start').value;
+  const end = document.getElementById('f_end').value;
   const status = document.getElementById('f_status').value;
 
   if (!name || !phone || !plan || !start) {
@@ -227,7 +245,7 @@ async function addMember() {
   btn.disabled = true;
   btn.textContent = 'Adding...';
 
-  const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, status };
+  const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, end_date: end, status };
 
   try {
     const res = await fetch(`${SUPABASE_URL}/${TABLE}`, {
