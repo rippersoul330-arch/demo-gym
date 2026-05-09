@@ -349,13 +349,19 @@ async function loadDashboard() {
     
     // Live Check-ins
     const todayStr = new Date().toISOString().split('T')[0];
-    const attendanceLogs = JSON.parse(localStorage.getItem('gymProAttendance') || '{}');
-    const checkedInToday = attendanceLogs[todayStr] ? attendanceLogs[todayStr].length : 0;
+    
+    const [attRes, eqRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/attendance?date=eq.${todayStr}`, { headers }),
+      fetch(`${SUPABASE_URL}/equipment`, { headers })
+    ]);
+    const attendanceLogs = attRes.ok ? await attRes.json() : [];
+    const eqList = eqRes.ok ? await eqRes.json() : [];
+
+    const checkedInToday = attendanceLogs.length;
     document.getElementById('liveCheckinCount').textContent = checkedInToday;
     document.getElementById('liveCapacity').textContent = activeMembers.length > 0 ? Math.round((checkedInToday / activeMembers.length) * 100) + '%' : '0%';
 
     // Equipment
-    const eqList = JSON.parse(localStorage.getItem('gymProEq') || '[]');
     const maintCount = eqList.filter(e => e.status !== 'operational').length;
     document.getElementById('kpiEqTotal').textContent = eqList.length;
     document.getElementById('kpiEqSub').innerHTML = `<i data-lucide="wrench"></i> ${maintCount} needs attention`;

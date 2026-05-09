@@ -7,14 +7,13 @@
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-  .badge { padding: 4px 10px; border-radius: var(--radius-full); font-weight: 700; font-size: 10px; text-transform: uppercase; }
-  .badge.operational { background: var(--green-soft); color: var(--green); }
-  .badge.maintenance { background: var(--yellow-soft); color: var(--yellow); }
-  .badge.broken { background: rgba(200,16,46,0.15); color: #ff6b6b; }
+  .controls-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
 </style>
 </head>
 <body>
+
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -24,7 +23,7 @@
       </svg>
     </div>
     <div>
-      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-text" id="sidebarGymName">GYMPRO</div>
       <div class="sidebar-logo-sub">Corp Management</div>
     </div>
   </div>
@@ -48,122 +47,221 @@
   <div class="topbar">
     <div class="topbar-left">
       <button class="hamburger" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
-      <h1>Equipment</h1>
-      <p>Manage and track gym assets</p>
+      <div>
+        <h1>Equipment & Inventory</h1>
+        <p>Track machines, free weights, and maintenance schedules</p>
+      </div>
     </div>
   </div>
 
   <div class="content">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2 style="font-size: var(--text-lg); font-weight: 700;">Inventory</h2>
-      <button class="btn-primary" onclick="openModal()"><i data-lucide="plus" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;"></i> Add Equipment</button>
+    <div class="controls-row">
+      <button class="btn-primary" onclick="openEqModal()"><i data-lucide="plus" style="display:inline-block;width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i> Add Equipment</button>
     </div>
+    
     <div class="gym-table-container">
       <table class="gym-table">
         <thead>
           <tr>
             <th>Equipment Name</th>
             <th>Status</th>
-            <th>Last Serviced</th>
+            <th>Last Maintenance</th>
+            <th>Next Maintenance</th>
+            <th>Notes</th>
             <th>Action</th>
           </tr>
         </thead>
-        <tbody id="eqTable">
+        <tbody id="eqTableBody">
+          <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
+<!-- Modal -->
 <div class="modal-overlay" id="eqModal">
   <div class="modal">
-    <h2>Add Equipment</h2>
+    <h2 id="modalTitle">Add Equipment</h2>
     <div class="form-group">
-      <label>Name (e.g. Treadmill #1)</label>
-      <input type="text" id="e_name"/>
+      <label>Equipment Name *</label>
+      <input type="text" id="e_name" placeholder="e.g. Treadmill #3"/>
     </div>
     <div class="form-group">
       <label>Status</label>
       <select id="e_status">
         <option value="operational">Operational</option>
-        <option value="maintenance">Needs Maintenance</option>
-        <option value="broken">Broken</option>
+        <option value="maintenance">Under Maintenance</option>
+        <option value="broken">Broken / Out of Order</option>
       </select>
     </div>
-    <div class="form-group">
-      <label>Last Serviced</label>
-      <input type="date" id="e_service"/>
+    <div class="form-group" style="display:flex;gap:var(--space-4);">
+      <div style="flex:1;">
+        <label>Last Maintenance</label>
+        <input type="date" id="e_last"/>
+      </div>
+      <div style="flex:1;">
+        <label>Next Maintenance</label>
+        <input type="date" id="e_next"/>
+      </div>
     </div>
-    <button class="btn-primary" style="width:100%" onclick="saveEq()">Save Equipment</button>
-    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal()">Cancel</button>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="e_notes" rows="2" placeholder="Any issues or parts ordered..."></textarea>
+    </div>
+    <input type="hidden" id="e_id"/>
+    <button class="btn-primary" id="saveEqBtn" style="width:100%" onclick="saveEq()">Save Equipment</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeEqModal()">Cancel</button>
   </div>
 </div>
 
+<div id="toast-container"></div>
+
 <script>
 lucide.createIcons();
-let eqList = JSON.parse(localStorage.getItem('gymProEq') || '[]');
+const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
+document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
 
-function init() {
-  if(!eqList.length) {
-    eqList = [
-      { id: '1', name: 'Treadmill #1', status: 'operational', service: '2026-04-15' },
-      { id: '2', name: 'Treadmill #2', status: 'maintenance', service: '2025-11-20' },
-      { id: '3', name: 'Squat Rack', status: 'operational', service: '2026-01-10' }
-    ];
-    save();
-  }
-  render();
+const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
+
+let eqList = [];
+
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type==='error'?'error':'');
+  toast.innerHTML = `<i data-lucide="${type==='error'?'x-circle':'check-circle-2'}"></i> ${msg}`;
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.remove(), 3000);
 }
 
-function save() { localStorage.setItem('gymProEq', JSON.stringify(eqList)); }
+async function fetchEq() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/equipment?order=created_at.asc`, { headers });
+    if(!res.ok) throw new Error("Failed to fetch equipment");
+    eqList = await res.json();
+    renderTable();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
 
-function render() {
-  const tbody = document.getElementById('eqTable');
-  if(!eqList.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No equipment found.</td></tr>';
+function renderTable() {
+  const tbody = document.getElementById('eqTableBody');
+  if (eqList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:var(--space-6);">No equipment added yet.</td></tr>';
     return;
   }
-  tbody.innerHTML = eqList.map(e => `
+  
+  tbody.innerHTML = eqList.map(e => {
+    let badge = '';
+    if (e.status === 'operational') badge = `<span class="badge" style="background:var(--green-soft);color:var(--green);">Operational</span>`;
+    else if (e.status === 'maintenance') badge = `<span class="badge" style="background:var(--yellow-soft);color:var(--yellow);">Maintenance</span>`;
+    else badge = `<span class="badge" style="background:rgba(200,16,46,0.15);color:#ff6b6b;">Broken</span>`;
+    
+    return `
     <tr>
-      <td style="font-weight:600; color: var(--text);">${e.name}</td>
-      <td><span class="badge ${e.status}">${e.status.replace('maintenance', 'Needs Maint.')}</span></td>
-      <td><span style="color:var(--text-muted);"><i data-lucide="calendar" style="width:14px;height:14px;display:inline-block;vertical-align:text-bottom;"></i> ${e.service || '—'}</span></td>
-      <td><button class="btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="deleteEq('${e.id}')">Remove</button></td>
-    </tr>
-  `).join('');
-  lucide.createIcons();
+      <td style="font-weight:600;color:var(--text);">${e.name}</td>
+      <td>${badge}</td>
+      <td style="color:var(--text-muted);">${e.last_maint || '—'}</td>
+      <td style="color:var(--text-muted);">${e.next_maint || '—'}</td>
+      <td style="color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.notes||''}">${e.notes || '—'}</td>
+      <td>
+        <button class="btn-secondary" style="padding:4px 8px;font-size:10px;margin-right:4px;" onclick="editEq('${e.id}')">Edit</button>
+        <button class="btn-primary" style="padding:4px 8px;font-size:10px;background:var(--surface-3);color:var(--red);border:1px solid var(--border);" onclick="deleteEq('${e.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
-function openModal() {
+function openEqModal() {
+  document.getElementById('modalTitle').textContent = 'Add Equipment';
+  document.getElementById('e_id').value = '';
   document.getElementById('e_name').value = '';
-  document.getElementById('e_service').value = new Date().toISOString().split('T')[0];
+  document.getElementById('e_status').value = 'operational';
+  document.getElementById('e_last').value = '';
+  document.getElementById('e_next').value = '';
+  document.getElementById('e_notes').value = '';
   document.getElementById('eqModal').classList.add('active');
 }
 
-function closeModal() { document.getElementById('eqModal').classList.remove('active'); }
+function closeEqModal() { document.getElementById('eqModal').classList.remove('active'); }
 
-function saveEq() {
-  const name = document.getElementById('e_name').value.trim();
-  if(!name) return alert('Name required');
-  eqList.push({
-    id: Date.now().toString(),
-    name,
-    status: document.getElementById('e_status').value,
-    service: document.getElementById('e_service').value
-  });
-  save(); render(); closeModal();
+function editEq(id) {
+  const e = eqList.find(x => x.id === id);
+  if(!e) return;
+  document.getElementById('modalTitle').textContent = 'Edit Equipment';
+  document.getElementById('e_id').value = e.id;
+  document.getElementById('e_name').value = e.name;
+  document.getElementById('e_status').value = e.status;
+  document.getElementById('e_last').value = e.last_maint || '';
+  document.getElementById('e_next').value = e.next_maint || '';
+  document.getElementById('e_notes').value = e.notes || '';
+  document.getElementById('eqModal').classList.add('active');
 }
 
-function deleteEq(id) {
-  if(confirm('Delete equipment?')) {
-    eqList = eqList.filter(e => e.id !== id);
-    save(); render();
+async function saveEq() {
+  const id = document.getElementById('e_id').value;
+  const name = document.getElementById('e_name').value.trim();
+  const status = document.getElementById('e_status').value;
+  const last_maint = document.getElementById('e_last').value || null;
+  const next_maint = document.getElementById('e_next').value || null;
+  const notes = document.getElementById('e_notes').value.trim() || null;
+  
+  if (!name) return showToast('Name is required', 'error');
+
+  const btn = document.getElementById('saveEqBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    if (id) {
+      const res = await fetch(`${SUPABASE_URL}/equipment?id=eq.${id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ name, status, last_maint, next_maint, notes })
+      });
+      if(!res.ok) throw new Error("Failed to update equipment");
+      showToast('Equipment updated');
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/equipment`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name, status, last_maint, next_maint, notes })
+      });
+      if(!res.ok) throw new Error("Failed to add equipment");
+      showToast('Equipment added');
+    }
+    
+    closeEqModal();
+    fetchEq();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Equipment';
   }
 }
 
-init();
+async function deleteEq(id) {
+  if(!confirm("Are you sure you want to delete this equipment?")) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/equipment?id=eq.${id}`, { method: 'DELETE', headers });
+    if(!res.ok) throw new Error("Failed to delete equipment");
+    showToast('Equipment deleted');
+    fetchEq();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
 
-function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('mobile-open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('mobile-open');
+  document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
+fetchEq();
 </script>
 </body>
 </html>

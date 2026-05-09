@@ -82,8 +82,9 @@ async function loadData() {
     
     // Attendance
     const todayStr = new Date().toISOString().split('T')[0];
-    const attendanceLogs = JSON.parse(localStorage.getItem('gymProAttendance') || '{}');
-    const checkedInToday = attendanceLogs[todayStr] ? attendanceLogs[todayStr].length : 0;
+    const attRes = await fetch(`${SUPABASE_URL}/attendance?date=eq.${todayStr}`, { headers });
+    const attendanceLogs = attRes.ok ? await attRes.json() : [];
+    const checkedInToday = attendanceLogs.length;
     
     const activeMembers = members.filter(m => m.status === 'active').length;
     const rate = activeMembers > 0 ? Math.round((checkedInToday / activeMembers) * 100) : 0;

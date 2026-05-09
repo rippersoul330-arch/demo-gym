@@ -6,9 +6,26 @@
 <title>GymPro Suite — Attendance</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .scanner-box { background: var(--surface-2); border: 2px dashed var(--border); border-radius: var(--radius-xl); height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); margin-bottom: var(--space-5); transition: border-color 0.3s; }
+  .scanner-box.scanning { border-color: var(--red); border-style: solid; box-shadow: 0 0 20px rgba(200,16,46,0.1); }
+  .scanner-line { width: 80%; height: 2px; background: var(--red); box-shadow: 0 0 10px var(--red); margin-top: 20px; animation: scan 2s infinite ease-in-out; display: none; }
+  .scanner-box.scanning .scanner-line { display: block; }
+  @keyframes scan { 0% { transform: translateY(-30px); } 50% { transform: translateY(30px); } 100% { transform: translateY(-30px); } }
+  
+  .manual-entry { display: flex; gap: var(--space-3); margin-bottom: var(--space-6); }
+  
+  .log-item { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; border-bottom: 1px solid var(--divider); }
+  .log-item:last-child { border-bottom: none; }
+  .log-time { font-size: var(--text-xs); color: var(--text-muted); font-family: monospace; }
+  .log-name { font-weight: 600; font-size: var(--text-sm); }
+  .log-plan { font-size: 10px; padding: 2px 8px; background: var(--surface-3); border-radius: var(--radius-full); color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-left: 8px;}
+</style>
 </head>
 <body>
+
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -18,7 +35,7 @@
       </svg>
     </div>
     <div>
-      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-text" id="sidebarGymName">GYMPRO</div>
       <div class="sidebar-logo-sub">Corp Management</div>
     </div>
   </div>
@@ -42,98 +59,176 @@
   <div class="topbar">
     <div class="topbar-left">
       <button class="hamburger" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
-      <h1>Check-In</h1>
-      <p>Log daily attendance for active members</p>
+      <div>
+        <h1>Daily Check-In</h1>
+        <p>Log member attendance and verify active plans</p>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="date-chip" id="topDate"></div>
     </div>
   </div>
 
-  <div class="content">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2 style="font-size: var(--text-lg); font-weight: 700;">Today's Roster</h2>
-    </div>
-    <div class="gym-table-container">
-      <table class="gym-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="attendanceTable">
-          <tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
-        </tbody>
-      </table>
+  <div class="content" style="max-width: 800px; margin: 0 auto; width: 100%;">
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+      
+      <!-- CHECK IN PANEL -->
+      <div>
+        <div class="scanner-box" id="scanner">
+          <i data-lucide="qr-code" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+          <p>Ready to scan QR / Barcode</p>
+          <div class="scanner-line"></div>
+        </div>
+
+        <div style="font-size: var(--text-xs); font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Or Enter Manually</div>
+        <div class="manual-entry">
+          <input type="text" id="manualInput" placeholder="Member ID or Name" style="flex:1;"/>
+          <button class="btn-primary" onclick="manualCheckIn()">Check In</button>
+        </div>
+        
+        <div id="checkinResult" style="padding: 16px; border-radius: var(--radius-md); font-weight: 600; text-align: center; display: none;"></div>
+      </div>
+
+      <!-- LOG PANEL -->
+      <div>
+        <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-4); border-bottom: 1px solid var(--divider); padding-bottom: 8px;">Today's Log <span id="logCount" style="font-size:12px; color:var(--text-muted); font-weight:normal; margin-left:8px;">(0)</span></h2>
+        <div id="logContainer" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-4); max-height: 400px; overflow-y: auto;">
+          <div style="color:var(--text-muted); text-align:center; font-size:var(--text-sm);">Loading logs...</div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
 <script>
 lucide.createIcons();
-const todayStr = new Date().toISOString().split('T')[0];
 document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
+document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
 
 const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
 const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
 
-let attendanceLogs = JSON.parse(localStorage.getItem('gymProAttendance') || '{}');
+let dbMembers = [];
+const todayStr = new Date().toISOString().split('T')[0];
 
-async function loadMembers() {
+async function initData() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/members?status=eq.active&order=name.asc`, { headers });
-    if(!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    renderTable(data);
+    const res = await fetch(`${SUPABASE_URL}/members`, { headers });
+    if(res.ok) dbMembers = await res.json();
+    renderLogs();
   } catch(e) {
-    document.getElementById('attendanceTable').innerHTML = `<tr><td colspan="3" style="color:#ff6b6b;">Error: ${e.message}</td></tr>`;
+    console.error("Failed to load members", e);
   }
 }
 
-function renderTable(members) {
-  const tbody = document.getElementById('attendanceTable');
-  if(!members.length) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">No active members found.</td></tr>';
+async function renderLogs() {
+  const container = document.getElementById('logContainer');
+  try {
+    const res = await fetch(`${SUPABASE_URL}/attendance?date=eq.${todayStr}&order=created_at.desc`, { headers });
+    if(!res.ok) throw new Error("Failed");
+    const logs = await res.json();
+    
+    document.getElementById('logCount').textContent = `(${logs.length})`;
+    
+    if(!logs.length) {
+      container.innerHTML = '<div style="color:var(--text-muted); text-align:center; font-size:var(--text-sm);">No check-ins yet today.</div>';
+      return;
+    }
+    
+    container.innerHTML = logs.map(log => `
+      <div class="log-item">
+        <div>
+          <span class="log-name">${log.member_name}</span>
+          <span class="log-plan">${log.plan || 'Plan'}</span>
+        </div>
+        <span class="log-time">${log.time}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = '<div style="color:var(--text-muted); text-align:center;">Error loading logs.</div>';
+  }
+}
+
+async function checkIn(query) {
+  const resBox = document.getElementById('checkinResult');
+  resBox.style.display = 'block';
+  resBox.className = '';
+  
+  if(!dbMembers.length) {
+    resBox.innerHTML = `⚠️ Database not loaded yet.`;
+    resBox.style.background = 'rgba(245,166,35,0.15)';
+    resBox.style.color = 'var(--yellow)';
     return;
   }
-  
-  tbody.innerHTML = members.map((m, i) => {
-    const colors = ['linear-gradient(135deg,#c8102e,#9e0b22)','linear-gradient(135deg,#5b9cf6,#2563eb)','linear-gradient(135deg,#f5a623,#c17d10)','linear-gradient(135deg,#4caf7d,#2e7d52)','linear-gradient(135deg,#a86fdf,#7c3aed)'];
-    const isCheckedIn = attendanceLogs[todayStr] && attendanceLogs[todayStr].includes(m.id);
-    const initials = (m.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    return `
-      <tr>
-        <td style="display:flex;align-items:center;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:${colors[i%colors.length]};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">${initials}</div> 
-          <span style="font-weight:600;">${m.name}</span>
-        </td>
-        <td>${isCheckedIn ? '<span style="color:var(--green);font-weight:600;"><i data-lucide="check-circle-2" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px;"></i>Checked In</span>' : '<span style="color:var(--text-muted);">Pending</span>'}</td>
-        <td>
-          <button class="btn-primary" style="padding:8px 16px; font-size:var(--text-xs);" onclick="checkIn('${m.id}')" ${isCheckedIn ? 'disabled' : ''}>
-            ${isCheckedIn ? 'Done' : 'Check In'}
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-  lucide.createIcons();
-}
 
-function checkIn(id) {
-  if(!attendanceLogs[todayStr]) attendanceLogs[todayStr] = [];
-  if(!attendanceLogs[todayStr].includes(id)) {
-    attendanceLogs[todayStr].push(id);
-    localStorage.setItem('gymProAttendance', JSON.stringify(attendanceLogs));
-    loadMembers(); // re-render
+  const q = query.toLowerCase();
+  const m = dbMembers.find(x => x.name.toLowerCase() === q || x.id.substring(0,6) === q);
+
+  if (!m) {
+    resBox.innerHTML = `❌ Member not found.`;
+    resBox.style.background = 'rgba(200,16,46,0.15)';
+    resBox.style.color = '#ff6b6b';
+    return;
+  }
+
+  if (m.status === 'expired' || m.status === 'pending') {
+    resBox.innerHTML = `⚠️ Access Denied: Plan is ${m.status.toUpperCase()}.`;
+    resBox.style.background = 'rgba(245,166,35,0.15)';
+    resBox.style.color = 'var(--yellow)';
+    return;
+  }
+
+  // Record Attendance in Supabase
+  const timeStr = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/attendance`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ member_name: m.name, plan: m.plan, time: timeStr, date: todayStr })
+    });
+    if(!res.ok) throw new Error("Failed to save check-in");
+    
+    resBox.innerHTML = `✅ Access Granted: ${m.name}`;
+    resBox.style.background = 'var(--green-soft)';
+    resBox.style.color = 'var(--green)';
+    
+    renderLogs();
+  } catch (e) {
+    resBox.innerHTML = `❌ Server Error: ${e.message}`;
+    resBox.style.background = 'rgba(200,16,46,0.15)';
+    resBox.style.color = '#ff6b6b';
   }
 }
 
-loadMembers();
+function manualCheckIn() {
+  const input = document.getElementById('manualInput');
+  if(!input.value.trim()) return;
+  
+  const scanner = document.getElementById('scanner');
+  scanner.classList.add('scanning');
+  
+  setTimeout(() => {
+    scanner.classList.remove('scanning');
+    checkIn(input.value.trim());
+    input.value = '';
+  }, 600);
+}
 
-function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('mobile-open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
+document.getElementById('manualInput').addEventListener('keypress', function (e) {
+  if (e.key === 'Enter') manualCheckIn();
+});
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('mobile-open');
+  document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
+initData();
 </script>
 </body>
 </html>

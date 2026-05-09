@@ -144,32 +144,44 @@
       <input type="text" id="t_assignee" placeholder="e.g. AD" maxlength="2" style="text-transform: uppercase;"/>
     </div>
     <input type="hidden" id="t_col" />
-    <button class="btn-primary" style="width:100%" onclick="saveTask()">Save Task</button>
+    <button class="btn-primary" style="width:100%" id="saveTaskBtn" onclick="saveTask()">Save Task</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal()">Cancel</button>
   </div>
 </div>
+
+<div id="toast-container"></div>
 
 <script>
 lucide.createIcons();
 const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
 document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
 
-let tasks = JSON.parse(localStorage.getItem('gymProTasks') || '[]');
+const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
 
-function init() {
-  if (tasks.length === 0) {
-    tasks = [
-      { id: '1', col: 'todo', title: 'Clean locker rooms', desc: 'Deep clean both men\'s and women\'s locker rooms before peak hours.', prio: 'high', assignee: 'JD' },
-      { id: '2', col: 'todo', title: 'Order protein shakes', desc: 'Inventory is low on chocolate and vanilla whey.', prio: 'medium', assignee: 'AD' },
-      { id: '3', col: 'prog', title: 'Fix broken cable machine', desc: 'Cable snapped on machine #4. Needs replacement cable installed.', prio: 'high', assignee: 'MK' },
-      { id: '4', col: 'done', title: 'Update member database', desc: 'Remove expired members and send renewal emails.', prio: 'low', assignee: 'SR' }
-    ];
-    saveTasks();
-  }
-  renderBoard();
+let tasks = [];
+
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + (type==='error'?'error':'');
+  toast.innerHTML = `<i data-lucide="${type==='error'?'x-circle':'check-circle-2'}"></i> ${msg}`;
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.remove(), 3000);
 }
 
-function saveTasks() { localStorage.setItem('gymProTasks', JSON.stringify(tasks)); }
+async function fetchTasks() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/tasks?order=created_at.asc`, { headers });
+    if(!res.ok) throw new Error("Failed to fetch tasks");
+    tasks = await res.json();
+    renderBoard();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
 
 function renderBoard() {
   const cols = { 'todo': [], 'prog': [], 'done': [] };
@@ -178,16 +190,16 @@ function renderBoard() {
   ['todo', 'prog', 'done'].forEach(c => {
     document.getElementById(`count-${c}`).textContent = cols[c].length;
     document.getElementById(c).innerHTML = cols[c].map(t => {
-      const pLabel = t.prio.charAt(0).toUpperCase() + t.prio.slice(1);
+      const pLabel = (t.prio || 'low').charAt(0).toUpperCase() + (t.prio || 'low').slice(1);
       return `
         <div class="task-card" draggable="true" ondragstart="drag(event)" id="task-${t.id}" data-id="${t.id}">
           <div style="display:flex;justify-content:space-between;">
             <div class="task-title">${t.title}</div>
             <button onclick="deleteTask('${t.id}')" style="color:var(--text-muted);font-size:14px;">&times;</button>
           </div>
-          <div class="task-desc">${t.desc}</div>
+          <div class="task-desc">${t.desc || ''}</div>
           <div class="task-meta">
-            <span class="task-badge badge-${t.prio}">${pLabel}</span>
+            <span class="task-badge badge-${t.prio || 'low'}">${pLabel}</span>
             ${t.assignee ? `<span class="task-assignee">${t.assignee}</span>` : ''}
           </div>
         </div>`;
@@ -208,25 +220,45 @@ function closeModal() {
   document.getElementById('taskModal').classList.remove('active');
 }
 
-function saveTask() {
+async function saveTask() {
   const title = document.getElementById('t_title').value.trim();
   const desc = document.getElementById('t_desc').value.trim();
   const prio = document.getElementById('t_prio').value;
   const assignee = document.getElementById('t_assignee').value.trim().toUpperCase();
   const col = document.getElementById('t_col').value;
   
-  if (!title) return alert('Title is required');
+  if (!title) return showToast('Title is required', 'error');
   
-  tasks.push({ id: Date.now().toString(), col, title, desc, prio, assignee });
-  saveTasks();
-  renderBoard();
-  closeModal();
+  const btn = document.getElementById('saveTaskBtn');
+  btn.disabled = true; btn.textContent = "Saving...";
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/tasks`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ title, desc, prio, assignee, col })
+    });
+    if(!res.ok) throw new Error("Failed to save task");
+    
+    closeModal();
+    showToast('Task added successfully');
+    fetchTasks();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = "Save Task";
+  }
 }
 
-function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  saveTasks();
-  renderBoard();
+async function deleteTask(id) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/tasks?id=eq.${id}`, { method: 'DELETE', headers });
+    if(!res.ok) throw new Error("Failed to delete task");
+    showToast("Task deleted");
+    fetchTasks();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
 /* DRAG AND DROP */
@@ -244,15 +276,28 @@ function dragLeave(ev) {
   ev.currentTarget.classList.remove('drag-over');
 }
 
-function drop(ev) {
+async function drop(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
   const id = ev.dataTransfer.getData("text");
+  const col = ev.currentTarget.id;
+  
   const task = tasks.find(t => t.id === id);
-  if (task) {
-    task.col = ev.currentTarget.id;
-    saveTasks();
-    renderBoard();
+  if (task && task.col !== col) {
+    task.col = col;
+    renderBoard(); // optimistic update
+    
+    try {
+      const res = await fetch(`${SUPABASE_URL}/tasks?id=eq.${id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ col })
+      });
+      if(!res.ok) throw new Error("Failed to move task");
+    } catch (e) {
+      showToast("Error moving task sync", "error");
+      fetchTasks(); // revert optimistic update
+    }
   }
 }
 
@@ -267,7 +312,7 @@ function toggleSidebar() {
   document.querySelector('.sidebar-overlay').classList.toggle('active');
 }
 
-init();
+fetchTasks();
 </script>
 </body>
 </html>
