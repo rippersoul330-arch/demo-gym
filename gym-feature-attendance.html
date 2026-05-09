@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymPro Suite — Attendance</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M2 8.5C2 7.1 3.1 6 4.5 6S7 7.1 7 8.5 5.9 11 4.5 11 2 9.9 2 8.5zM17 8.5c0-1.4 1.1-2.5 2.5-2.5S22 7.1 22 8.5 20.9 11 19.5 11 17 9.9 17 8.5zM2 15.5C2 14.1 3.1 13 4.5 13S7 14.1 7 15.5 5.9 18 4.5 18 2 16.9 2 15.5zM17 15.5c0-1.4 1.1-2.5 2.5-2.5S22 14.1 22 15.5 20.9 18 19.5 18 17 16.9 17 15.5z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-sub">Corp Management</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Main</div>
+  <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members</a>
+  <a href="gym-feature-attendance.html" class="nav-item active"><i data-lucide="scan-line"></i> Check-In</a>
+  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
+
+  <div class="nav-section-label">Finance</div>
+  <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
+
+  <div class="nav-section-label">Manage</div>
+  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
+  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
+  <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Check-In</h1>
+      <p>Log daily attendance for active members</p>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip" id="topDate"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="font-size: var(--text-lg); font-weight: 700;">Today's Roster</h2>
+    </div>
+    <div class="gym-table-container">
+      <table class="gym-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTable">
+          <tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
+
+let attendanceLogs = JSON.parse(localStorage.getItem('gymProAttendance') || '{}');
+
+async function loadMembers() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/members?status=eq.active&order=name.asc`, { headers });
+    if(!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderTable(data);
+  } catch(e) {
+    document.getElementById('attendanceTable').innerHTML = `<tr><td colspan="3" style="color:#ff6b6b;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderTable(members) {
+  const tbody = document.getElementById('attendanceTable');
+  if(!members.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">No active members found.</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = members.map((m, i) => {
+    const colors = ['linear-gradient(135deg,#c8102e,#9e0b22)','linear-gradient(135deg,#5b9cf6,#2563eb)','linear-gradient(135deg,#f5a623,#c17d10)','linear-gradient(135deg,#4caf7d,#2e7d52)','linear-gradient(135deg,#a86fdf,#7c3aed)'];
+    const isCheckedIn = attendanceLogs[todayStr] && attendanceLogs[todayStr].includes(m.id);
+    const initials = (m.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    return `
+      <tr>
+        <td style="display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${colors[i%colors.length]};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">${initials}</div> 
+          <span style="font-weight:600;">${m.name}</span>
+        </td>
+        <td>${isCheckedIn ? '<span style="color:var(--green);font-weight:600;"><i data-lucide="check-circle-2" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px;"></i>Checked In</span>' : '<span style="color:var(--text-muted);">Pending</span>'}</td>
+        <td>
+          <button class="btn-primary" style="padding:8px 16px; font-size:var(--text-xs);" onclick="checkIn('${m.id}')" ${isCheckedIn ? 'disabled' : ''}>
+            ${isCheckedIn ? 'Done' : 'Check In'}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+function checkIn(id) {
+  if(!attendanceLogs[todayStr]) attendanceLogs[todayStr] = [];
+  if(!attendanceLogs[todayStr].includes(id)) {
+    attendanceLogs[todayStr].push(id);
+    localStorage.setItem('gymProAttendance', JSON.stringify(attendanceLogs));
+    loadMembers(); // re-render
+  }
+}
+
+loadMembers();
+</script>
+</body>
+</html>

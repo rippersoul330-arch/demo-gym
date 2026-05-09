@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymPro Suite — Members</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  /* Additional styles specific to members page */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  .grid.four { grid-template-columns: repeat(4, 1fr); }
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-6); margin-bottom: var(--space-6); }
+  .form-card h2 { font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-5); color: var(--text); display: flex; align-items: center; gap: 8px;}
+  .btn-row { margin-top: var(--space-5); display: flex; gap: var(--space-3); align-items: center; }
+  .msg { font-size: var(--text-xs); padding: 8px 14px; border-radius: var(--radius-sm); display: none; }
+  .msg.ok { background: var(--green-soft); color: var(--green); display: block; }
+  .msg.err { background: rgba(200,16,46,0.15); color: #ff6b6b; display: block; }
+  
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); }
+  .member-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-5); transition: box-shadow var(--transition), transform var(--transition); position: relative; overflow: hidden;}
+  .member-card:hover { transform: translateY(-2px); border-color: var(--red); box-shadow: var(--shadow-md); }
+  .member-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red-dark), var(--red)); }
+  .card-avatar { width: 48px; height: 48px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--red-deep), var(--red)); display: grid; place-items: center; font-size: var(--text-lg); font-family: var(--font-display); font-weight: 800; color: #fff; margin-bottom: var(--space-4); }
+  .card-name { font-size: var(--text-lg); font-weight: 700; }
+  .card-plan { display: inline-block; background: var(--red-soft); color: var(--red); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: var(--radius-full); margin-top: 4px; }
+  .card-info { margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+  .card-row { display: flex; justify-content: space-between; font-size: var(--text-xs); }
+  .card-row .lbl { color: var(--text-muted); display:flex; align-items:center; gap: 6px;}
+  .card-row .val { font-weight: 600; }
+  .badge { padding: 2px 8px; border-radius: var(--radius-full); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .badge.active { background: var(--green-soft); color: var(--green); }
+  .badge.expired { background: rgba(200,16,46,0.15); color: #ff6b6b; }
+  .badge.pending { background: var(--yellow-soft); color: var(--yellow); }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: var(--text-sm); }
+  
+  @media(max-width:600px){.grid,.grid.four{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M2 8.5C2 7.1 3.1 6 4.5 6S7 7.1 7 8.5 5.9 11 4.5 11 2 9.9 2 8.5zM17 8.5c0-1.4 1.1-2.5 2.5-2.5S22 7.1 22 8.5 20.9 11 19.5 11 17 9.9 17 8.5zM2 15.5C2 14.1 3.1 13 4.5 13S7 14.1 7 15.5 5.9 18 4.5 18 2 16.9 2 15.5zM17 15.5c0-1.4 1.1-2.5 2.5-2.5S22 14.1 22 15.5 20.9 18 19.5 18 17 16.9 17 15.5z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-sub">Corp Management</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Main</div>
+  <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  <a href="gym-feature-members.html" class="nav-item active"><i data-lucide="users"></i> Members</a>
+  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
+  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
+
+  <div class="nav-section-label">Finance</div>
+  <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
+
+  <div class="nav-section-label">Manage</div>
+  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
+  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
+  <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Members</h1>
+      <p>Manage gym members and subscriptions</p>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip" id="topDate"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Add Member Form -->
+    <div class="form-card">
+      <h2><i data-lucide="user-plus" style="width: 20px; height: 20px; color: var(--red);"></i> Add New Member</h2>
+      <div class="grid">
+        <div>
+          <label>Full Name *</label>
+          <input id="f_name" placeholder="John Doe"/>
+        </div>
+        <div>
+          <label>Phone *</label>
+          <input id="f_phone" placeholder="+1 234 567 8900"/>
+        </div>
+        <div>
+          <label>Email</label>
+          <input id="f_email" type="email" placeholder="john@email.com"/>
+        </div>
+        <div>
+          <label>Date of Birth</label>
+          <input id="f_dob" type="date"/>
+        </div>
+      </div>
+      <div class="grid four" style="margin-top:14px">
+        <div>
+          <label>Membership Plan *</label>
+          <select id="f_plan" onchange="updateEndDate()">
+            <option value="">Select plan</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly (3 mo)</option>
+            <option value="half_yearly">Half-Yearly (6 mo)</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div>
+          <label>Start Date *</label>
+          <input id="f_start" type="date" onchange="updateEndDate()"/>
+        </div>
+        <div>
+          <label>End Date</label>
+          <input id="f_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="f_status">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="addBtn" onclick="addMember()">Add Member</button>
+        <div class="msg" id="msg"></div>
+      </div>
+    </div>
+
+    <!-- Members Grid -->
+    <h2 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4);">Directory</h2>
+    <div class="cards" id="cardsContainer">
+      <div class="empty" id="emptyMsg">Loading members...</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Renew Modal -->
+<div class="modal-overlay" id="renewModal">
+  <div class="modal">
+    <h2>↻ Renew Membership</h2>
+    <div style="margin-bottom: var(--space-4); font-size: var(--text-sm); color: var(--text-muted);">
+      Renewing for: <strong id="r_name" style="color: var(--text);"></strong>
+    </div>
+    <div class="form-group">
+      <label>New Membership Plan *</label>
+      <select id="r_plan" onchange="updateRenewEndDate()">
+        <option value="monthly">Monthly</option>
+        <option value="quarterly">Quarterly (3 mo)</option>
+        <option value="half_yearly">Half-Yearly (6 mo)</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>New Start Date *</label>
+      <input id="r_start" type="date" onchange="updateRenewEndDate()"/>
+    </div>
+    <div class="form-group">
+      <label>New End Date</label>
+      <input id="r_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
+    </div>
+    <input type="hidden" id="r_id"/>
+    <button class="btn-primary" id="renewBtn" onclick="submitRenewal()" style="width: 100%; margin-top: var(--space-2);">Confirm Renewal</button>
+    <button class="btn-secondary" onclick="closeRenewModal()" style="width: 100%; margin-top: var(--space-2);">Cancel</button>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
+const TABLE = 'members';
+
+const headers = {
+  'Content-Type': 'application/json',
+  'apikey': ANON_KEY,
+  'Authorization': 'Bearer ' + ANON_KEY,
+  'Prefer': 'return=representation'
+};
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  setTimeout(() => el.className = 'msg', 3000);
+}
+
+function initDate() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f_start').value = today;
+  updateEndDate();
+}
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function calcExpiry(start, plan) {
+  if (!start || !plan) return '—';
+  const d = new Date(start);
+  const map = { monthly: 30, quarterly: 90, half_yearly: 180, yearly: 365 };
+  d.setDate(d.getDate() + (map[plan] || 30));
+  return d.toISOString().split('T')[0];
+}
+
+function updateEndDate() {
+  const start = document.getElementById('f_start').value;
+  const plan = document.getElementById('f_plan').value;
+  if (start && plan) {
+    const end = calcExpiry(start, plan);
+    document.getElementById('f_end').value = end !== '—' ? end : '';
+  } else {
+    document.getElementById('f_end').value = '';
+  }
+}
+
+function renderCards(members) {
+  const container = document.getElementById('cardsContainer');
+  
+  if (!members.length) {
+    container.innerHTML = '<div class="empty" id="emptyMsg">No members yet. Add your first member above!</div>';
+    return;
+  }
+
+  container.innerHTML = members.map(m => {
+    const expiry = calcExpiry(m.start_date, m.plan);
+    const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
+    return `
+    <div class="member-card">
+      <div class="card-avatar">${getInitials(m.name || '?')}</div>
+      <div class="card-name">${m.name}</div>
+      <div class="card-plan">${planLabel}</div>
+      <div class="card-info">
+        <div class="card-row"><span class="lbl"><i data-lucide="phone" style="width:12px;height:12px;"></i> Phone</span><span class="val">${m.phone || '—'}</span></div>
+        ${m.email ? `<div class="card-row"><span class="lbl"><i data-lucide="mail" style="width:12px;height:12px;"></i> Email</span><span class="val">${m.email}</span></div>` : ''}
+        <div class="card-row"><span class="lbl"><i data-lucide="calendar" style="width:12px;height:12px;"></i> Start</span><span class="val">${m.start_date || '—'}</span></div>
+        <div class="card-row"><span class="lbl"><i data-lucide="clock" style="width:12px;height:12px;"></i> Expires</span><span class="val">${expiry}</span></div>
+        <div class="card-row"><span class="lbl"><i data-lucide="activity" style="width:12px;height:12px;"></i> Status</span><span class="val"><span class="badge ${m.status}">${m.status}</span></span></div>
+        <button class="btn-secondary" style="margin-top:var(--space-3);width:100%;padding:8px;font-size:var(--text-xs);" onclick="openRenewModal('${m.id}', '${(m.name || '').replace(/'/g, "\\'")}', '${m.plan}')">↻ Renew</button>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+async function loadMembers() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/${TABLE}?order=created_at.desc`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderCards(data);
+  } catch (e) {
+    document.getElementById('cardsContainer').innerHTML = `<div class="empty">⚠️ Could not load members: ${e.message}</div>`;
+  }
+}
+
+async function addMember() {
+  const name = document.getElementById('f_name').value.trim();
+  const phone = document.getElementById('f_phone').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const dob = document.getElementById('f_dob').value;
+  const plan = document.getElementById('f_plan').value;
+  const start = document.getElementById('f_start').value;
+  const end = document.getElementById('f_end').value;
+  const status = document.getElementById('f_status').value;
+
+  if (!name || !phone || !plan || !start) {
+    showMsg('Please fill in all required fields (*)', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+
+  const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, end_date: end, status };
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/${TABLE}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showMsg('✅ Member added successfully!', 'ok');
+    ['f_name','f_phone','f_email','f_dob'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f_plan').value = '';
+    document.getElementById('f_status').value = 'active';
+    initDate();
+    loadMembers();
+  } catch (e) {
+    showMsg('❌ Error: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Member';
+  }
+}
+
+function openRenewModal(id, name, currentPlan) {
+  document.getElementById('r_id').value = id;
+  document.getElementById('r_name').textContent = name;
+  document.getElementById('r_plan').value = currentPlan || 'monthly';
+  
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('r_start').value = today;
+  
+  updateRenewEndDate();
+  document.getElementById('renewModal').classList.add('active');
+}
+
+function closeRenewModal() {
+  document.getElementById('renewModal').classList.remove('active');
+}
+
+function updateRenewEndDate() {
+  const start = document.getElementById('r_start').value;
+  const plan = document.getElementById('r_plan').value;
+  if (start && plan) {
+    const end = calcExpiry(start, plan);
+    document.getElementById('r_end').value = end !== '—' ? end : '';
+  } else {
+    document.getElementById('r_end').value = '';
+  }
+}
+
+async function submitRenewal() {
+  const id = document.getElementById('r_id').value;
+  const plan = document.getElementById('r_plan').value;
+  const start = document.getElementById('r_start').value;
+  const end = document.getElementById('r_end').value;
+
+  if (!plan || !start) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
+  const btn = document.getElementById('renewBtn');
+  btn.disabled = true;
+  btn.textContent = 'Renewing...';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/${TABLE}?id=eq.${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ plan: plan, start_date: start, end_date: end, status: 'active' })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    
+    showMsg('✅ Membership renewed successfully!', 'ok');
+    closeRenewModal();
+    loadMembers();
+  } catch (e) {
+    alert('❌ Error renewing: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm Renewal';
+  }
+}
+
+initDate();
+loadMembers();
+</script>
+</body>
+</html>

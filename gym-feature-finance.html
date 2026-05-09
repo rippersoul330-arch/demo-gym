@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymPro Suite — Finance</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M2 8.5C2 7.1 3.1 6 4.5 6S7 7.1 7 8.5 5.9 11 4.5 11 2 9.9 2 8.5zM17 8.5c0-1.4 1.1-2.5 2.5-2.5S22 7.1 22 8.5 20.9 11 19.5 11 17 9.9 17 8.5zM2 15.5C2 14.1 3.1 13 4.5 13S7 14.1 7 15.5 5.9 18 4.5 18 2 16.9 2 15.5zM17 15.5c0-1.4 1.1-2.5 2.5-2.5S22 14.1 22 15.5 20.9 18 19.5 18 17 16.9 17 15.5z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text" id="sidebarGymName">GYMPRO</div>
+      <div class="sidebar-logo-sub">Corp Management</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Main</div>
+  <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members</a>
+  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
+  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
+
+  <div class="nav-section-label">Finance</div>
+  <a href="gym-feature-finance.html" class="nav-item active"><i data-lucide="landmark"></i> Finance</a>
+
+  <div class="nav-section-label">Manage</div>
+  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
+  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
+  <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Finance Overview</h1>
+      <p>Track collections, pending payments, and revenue</p>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip" id="topDate"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card red-card">
+        <div class="kpi-top">
+          <div class="kpi-icon white"><i data-lucide="indian-rupee"></i></div>
+          <span class="kpi-trend white"><i data-lucide="calendar-days"></i> Month</span>
+        </div>
+        <div class="kpi-value" id="f_monthRev">₹0</div>
+        <div class="kpi-label">Total Revenue This Month</div>
+        <div class="kpi-sub"><i data-lucide="check-circle-2"></i> Collected in current month</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon green"><i data-lucide="landmark"></i></div>
+          <span class="kpi-trend up"><i data-lucide="calendar"></i> Year</span>
+        </div>
+        <div class="kpi-value" id="f_yearRev">₹0</div>
+        <div class="kpi-label">Total Revenue This Year</div>
+        <div class="kpi-sub"><i data-lucide="bar-chart-3"></i> Yearly collections overview</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon yellow"><i data-lucide="clock"></i></div>
+          <span class="kpi-trend down"><i data-lucide="alert-circle"></i> Pending</span>
+        </div>
+        <div class="kpi-value" id="f_pendingTotal">₹0</div>
+        <div class="kpi-label">Pending Payments</div>
+        <div class="kpi-sub" id="f_pendingCount"><i data-lucide="users"></i> 0 members haven't paid</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon blue"><i data-lucide="alert-triangle"></i></div>
+          <span class="kpi-trend down" style="background:rgba(200,16,46,0.15);color:#ff6b6b;"><i data-lucide="x-circle"></i> Overdue</span>
+        </div>
+        <div class="kpi-value" id="f_overdueTotal">₹0</div>
+        <div class="kpi-label">Overdue Amount</div>
+        <div class="kpi-sub" id="f_overdueCount"><i data-lucide="users"></i> 0 expired members unpaid</div>
+      </div>
+    </div>
+
+    <!-- LISTS -->
+    <div class="bottom-row">
+      <!-- PENDING MEMBERS -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">Pending Payments</div>
+          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div id="pendingContainer">Loading...</div>
+      </div>
+
+      <!-- OVERDUE MEMBERS -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">Overdue (Expired) Accounts</div>
+          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div id="overdueContainer">Loading...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
+document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
+
+const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
+
+const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
+
+const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
+
+function getInitials(name) {
+  return (name||'?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+async function loadFinanceData() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
+    const members = await res.json();
+    
+    let monthRev = 0;
+    let yearRev = 0;
+    
+    let pendingTotal = 0;
+    let pendingMembers = [];
+    
+    let overdueTotal = 0;
+    let overdueMembers = [];
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    members.forEach(m => {
+      const price = PLAN_PRICES[m.plan] || 0;
+      
+      // Calculate Revenue based on Active status and start_date
+      if (m.status === 'active' && m.start_date) {
+        const startDate = new Date(m.start_date);
+        if (startDate.getFullYear() === currentYear) {
+          yearRev += price;
+          if (startDate.getMonth() === currentMonth) {
+            monthRev += price;
+          }
+        }
+      }
+      
+      // Calculate Pending
+      if (m.status === 'pending') {
+        pendingTotal += price;
+        pendingMembers.push(m);
+      }
+      
+      // Calculate Overdue (Expired)
+      if (m.status === 'expired') {
+        overdueTotal += price;
+        overdueMembers.push(m);
+      }
+    });
+    
+    // Update KPI UI
+    document.getElementById('f_monthRev').textContent = formatINR(monthRev);
+    document.getElementById('f_yearRev').textContent = formatINR(yearRev);
+    
+    document.getElementById('f_pendingTotal').textContent = formatINR(pendingTotal);
+    document.getElementById('f_pendingCount').innerHTML = `<i data-lucide="users"></i> ${pendingMembers.length} member${pendingMembers.length !== 1 ? 's' : ''} haven't paid`;
+    
+    document.getElementById('f_overdueTotal').textContent = formatINR(overdueTotal);
+    document.getElementById('f_overdueCount').innerHTML = `<i data-lucide="users"></i> ${overdueMembers.length} expired member${overdueMembers.length !== 1 ? 's' : ''} unpaid`;
+    
+    // Render Pending Members
+    const renderList = (arr, containerId) => {
+      const container = document.getElementById(containerId);
+      if (!arr.length) {
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:var(--text-xs);">No members in this category.</div>';
+        return;
+      }
+      container.innerHTML = arr.slice(0, 8).map((m, i) => {
+        const colors = ['linear-gradient(135deg,#c8102e,#9e0b22)','linear-gradient(135deg,#5b9cf6,#2563eb)','linear-gradient(135deg,#f5a623,#c17d10)','linear-gradient(135deg,#4caf7d,#2e7d52)','linear-gradient(135deg,#a86fdf,#7c3aed)'];
+        const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
+        const priceStr = formatINR(PLAN_PRICES[m.plan] || 0);
+        return `
+          <div class="member-row">
+            <div class="member-avatar" style="background:${colors[i%colors.length]};">${getInitials(m.name)}</div>
+            <div class="member-info">
+              <div class="member-name">${m.name}</div>
+              <div class="member-plan"><i data-lucide="phone" style="width:10px;height:10px;display:inline-block;"></i> ${m.phone || 'No phone'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:600;font-size:var(--text-sm);color:var(--red);">${priceStr}</div>
+              <div style="font-size:10px;color:var(--text-muted);">${planLabel}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    renderList(pendingMembers, 'pendingContainer');
+    renderList(overdueMembers, 'overdueContainer');
+    
+    lucide.createIcons();
+
+  } catch (e) {
+    console.error("Failed to load finance data:", e);
+  }
+}
+
+loadFinanceData();
+</script>
+</body>
+</html>

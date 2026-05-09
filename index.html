@@ -1,409 +1,390 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GymPro – Member Manager</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f0f0f0;min-height:100vh}
-  header{background:linear-gradient(135deg,#ff6b35,#f7c59f22);padding:24px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff15}
-  header .logo-container {display:flex;align-items:center;gap:16px;}
-  header h1{font-size:1.8rem;font-weight:800;background:linear-gradient(90deg,#ff6b35,#ffbe7b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  header span{font-size:.9rem;color:#aaa;margin-top:4px;display:block}
-  .logo{width:48px;height:48px;background:linear-gradient(135deg,#ff6b35,#ffbe7b);border-radius:14px;display:grid;place-items:center;font-size:1.5rem}
-  nav a {color: #f0f0f0; text-decoration: none; font-weight: 600; padding: 10px 18px; background: #ffffff12; border-radius: 12px; transition: all 0.2s; font-size: 0.9rem; border: 1px solid #ffffff0a;}
-  nav a:hover {background: #ffffff25; border-color: #ffffff20; transform: translateY(-1px);}
-  main{max-width:1100px;margin:0 auto;padding:32px 20px}
-  .form-card{background:#161616;border:1px solid #ffffff12;border-radius:20px;padding:28px;margin-bottom:36px}
-  .form-card h2{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#ff6b35}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .grid.three{grid-template-columns:1fr 1fr 1fr}
-  .grid.four{grid-template-columns:repeat(4, 1fr)}
-  label{font-size:.78rem;color:#aaa;font-weight:500;display:block;margin-bottom:5px}
-  input,select{width:100%;background:#0d0d0d;border:1px solid #ffffff20;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-family:inherit;font-size:.88rem;outline:none;transition:border .2s}
-  input:focus,select:focus{border-color:#ff6b35}
-  select option{background:#1a1a1a}
-  .full{grid-column:1/-1}
-  .btn{background:linear-gradient(135deg,#ff6b35,#ff8c5a);border:none;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:12px;cursor:pointer;transition:opacity .2s;font-family:inherit}
-  .btn:hover{opacity:.85}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .btn-row{margin-top:18px;display:flex;gap:12px;align-items:center}
-  .msg{font-size:.82rem;padding:8px 14px;border-radius:8px;display:none}
-  .msg.ok{background:#16a34a22;color:#4ade80;border:1px solid #4ade8033;display:block}
-  .msg.err{background:#dc262622;color:#f87171;border:1px solid #f8717133;display:block}
-  .section-title{font-size:1.1rem;font-weight:700;margin-bottom:20px}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
-  .card{background:#161616;border:1px solid #ffffff12;border-radius:20px;padding:24px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
-  .card:hover{transform:translateY(-3px);border-color:#ff6b3550}
-  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#ff6b35,#ffbe7b)}
-  .card-avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#ffbe7b);display:grid;place-items:center;font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:14px}
-  .card-name{font-size:1rem;font-weight:700}
-  .card-plan{display:inline-block;background:#ff6b3522;color:#ff8c5a;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:4px}
-  .card-info{margin-top:14px;display:flex;flex-direction:column;gap:7px}
-  .card-row{display:flex;justify-content:space-between;font-size:.8rem}
-  .card-row .lbl{color:#888}
-  .card-row .val{font-weight:600}
-  .badge{padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
-  .badge.active{background:#16a34a22;color:#4ade80}
-  .badge.expired{background:#dc262622;color:#f87171}
-  .badge.pending{background:#d9770622;color:#fb923c}
-  .empty{text-align:center;padding:60px 20px;color:#555;font-size:.9rem}
-  .count-bar{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap;}
-  .count-pill{background:#161616;border:1px solid #ffffff12;border-radius:14px;padding:14px 20px;flex:1;min-width:140px;text-align:center;}
-  .count-pill .num{font-size:1.8rem;font-weight:800;background:linear-gradient(90deg,#ff6b35,#ffbe7b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .count-pill .lbl{font-size:.75rem;color:#888;margin-top:2px}
-  @media(max-width:600px){.grid,.grid.three,.grid.four{grid-template-columns:1fr}}
-  
-  /* Modal Styles */
-  .modal-overlay {position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; place-items: center; z-index: 100; opacity: 0; transition: opacity 0.2s;}
-  .modal-overlay.active {display: grid; opacity: 1;}
-  .modal {background: #161616; border: 1px solid #ffffff15; border-radius: 20px; padding: 28px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transform: translateY(20px); transition: transform 0.2s;}
-  .modal-overlay.active .modal {transform: translateY(0);}
-  .modal h2 {font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; color: #ff6b35;}
-  .modal .form-group {margin-bottom: 16px;}
-  .cancel-btn {background: transparent; color: #888; text-align: center; display: block; width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; border: none; font-family: inherit; font-weight: 500;}
-  .cancel-btn:hover {color: #f0f0f0;}
-</style>
+<title>GymPro Suite — Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<header>
-  <div class="logo-container">
-    <div class="logo">💪</div>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M2 8.5C2 7.1 3.1 6 4.5 6S7 7.1 7 8.5 5.9 11 4.5 11 2 9.9 2 8.5zM17 8.5c0-1.4 1.1-2.5 2.5-2.5S22 7.1 22 8.5 20.9 11 19.5 11 17 9.9 17 8.5zM2 15.5C2 14.1 3.1 13 4.5 13S7 14.1 7 15.5 5.9 18 4.5 18 2 16.9 2 15.5zM17 15.5c0-1.4 1.1-2.5 2.5-2.5S22 14.1 22 15.5 20.9 18 19.5 18 17 16.9 17 15.5z"/>
+      </svg>
+    </div>
     <div>
-      <h1>GymPro</h1>
-      <span>Member Management System</span>
-    </div>
-  </div>
-  <nav>
-    <a href="gym-feature-taskboard.html">Go to Taskboard →</a>
-  </nav>
-</header>
-
-<main>
-  <!-- Stats -->
-  <div class="count-bar">
-    <div class="count-pill"><div class="num" id="totalCount">0</div><div class="lbl">Total Members</div></div>
-    <div class="count-pill"><div class="num" id="activeCount">0</div><div class="lbl">Active</div></div>
-    <div class="count-pill"><div class="num" id="expiredCount">0</div><div class="lbl">Expired</div></div>
-    <div class="count-pill"><div class="num" id="monthRev">₹0</div><div class="lbl">30-Day Rev</div></div>
-    <div class="count-pill"><div class="num" id="yearRev">₹0</div><div class="lbl">Annual Rev</div></div>
-  </div>
-
-  <!-- Add Member Form -->
-  <div class="form-card">
-    <h2>➕ Add New Member</h2>
-    <div class="grid">
-      <div>
-        <label>Full Name *</label>
-        <input id="f_name" placeholder="John Doe"/>
-      </div>
-      <div>
-        <label>Phone *</label>
-        <input id="f_phone" placeholder="+1 234 567 8900"/>
-      </div>
-      <div>
-        <label>Email</label>
-        <input id="f_email" type="email" placeholder="john@email.com"/>
-      </div>
-      <div>
-        <label>Date of Birth</label>
-        <input id="f_dob" type="date"/>
-      </div>
-    </div>
-    <div class="grid four" style="margin-top:14px">
-      <div>
-        <label>Membership Plan *</label>
-        <select id="f_plan" onchange="updateEndDate()">
-          <option value="">Select plan</option>
-          <option value="monthly">Monthly</option>
-          <option value="quarterly">Quarterly (3 mo)</option>
-          <option value="half_yearly">Half-Yearly (6 mo)</option>
-          <option value="yearly">Yearly</option>
-        </select>
-      </div>
-      <div>
-        <label>Start Date *</label>
-        <input id="f_start" type="date" onchange="updateEndDate()"/>
-      </div>
-      <div>
-        <label>End Date</label>
-        <input id="f_end" type="date" disabled style="opacity: 0.7; cursor: not-allowed;"/>
-      </div>
-      <div>
-        <label>Status</label>
-        <select id="f_status">
-          <option value="active">Active</option>
-          <option value="pending">Pending</option>
-          <option value="expired">Expired</option>
-        </select>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="addBtn" onclick="addMember()">Add Member</button>
-      <div class="msg" id="msg"></div>
+      <div class="sidebar-logo-text">GYMPRO</div>
+      <div class="sidebar-logo-sub">Corp Management</div>
     </div>
   </div>
 
-  <!-- Members Grid -->
-  <div class="section-title">👥 Members</div>
-  <div class="cards" id="cardsContainer">
-    <div class="empty" id="emptyMsg">Loading members...</div>
-  </div>
-</main>
+  <div class="nav-section-label">Main</div>
+  <a href="index.html" class="nav-item active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members <span class="nav-badge" id="sidebarMembersCount">0</span></a>
+  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
+  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
 
-<!-- Renew Modal -->
-<div class="modal-overlay" id="renewModal">
-  <div class="modal">
-    <h2>↻ Renew Membership</h2>
-    <div style="margin-bottom: 16px; font-size: 0.9rem; color: #ccc;">
-      Renewing for: <strong id="r_name" style="color: #fff;"></strong>
+  <div class="nav-section-label">Finance</div>
+  <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
+
+  <div class="nav-section-label">Manage</div>
+  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
+  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
+  <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Admin</div>
+        <div class="user-role">Owner</div>
+      </div>
+      <i data-lucide="chevron-right" style="width:14px;height:14px;margin-left:auto;color:rgba(255,255,255,0.4);"></i>
     </div>
-    <div class="form-group">
-      <label>New Membership Plan *</label>
-      <select id="r_plan" onchange="updateRenewEndDate()">
-        <option value="monthly">Monthly</option>
-        <option value="quarterly">Quarterly (3 mo)</option>
-        <option value="half_yearly">Half-Yearly (6 mo)</option>
-        <option value="yearly">Yearly</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>New Start Date *</label>
-      <input id="r_start" type="date" onchange="updateRenewEndDate()"/>
-      <div style="font-size: 0.7rem; color: #888; margin-top: 4px;">Defaults to today, but you can change it if they have remaining days.</div>
-    </div>
-    <div class="form-group">
-      <label>New End Date</label>
-      <input id="r_end" type="date" disabled style="opacity: 0.7; cursor: not-allowed;"/>
-    </div>
-    <input type="hidden" id="r_id"/>
-    <button class="btn" id="renewBtn" onclick="submitRenewal()" style="width: 100%; margin-top: 10px;">Confirm Renewal</button>
-    <button class="cancel-btn" onclick="closeRenewModal()">Cancel</button>
   </div>
-</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Dashboard</h1>
+      <p>Welcome back — here's what's happening today</p>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip" id="topDate"></div>
+      <button class="icon-btn">
+        <i data-lucide="search" style="width:15px;height:15px;"></i>
+      </button>
+      <button class="icon-btn">
+        <i data-lucide="bell" style="width:15px;height:15px;"></i>
+        <div class="notif-dot"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- LIVE CHECK-IN BANNER -->
+    <div class="checkin-banner">
+      <div>
+        <div class="checkin-live"><div class="live-dot"></div> Live Today</div>
+        <div class="checkin-count" id="liveCheckinCount">0</div>
+        <div class="checkin-label">Members checked in</div>
+      </div>
+      <div class="checkin-divider"></div>
+      <div>
+        <div class="checkin-live">Peak Hour</div>
+        <div class="checkin-count">6–8 PM</div>
+        <div class="checkin-label">Most active window</div>
+      </div>
+      <div class="checkin-divider"></div>
+      <div>
+        <div class="checkin-live">Capacity</div>
+        <div class="checkin-count" id="liveCapacity">0%</div>
+        <div class="checkin-label">Floor utilisation</div>
+      </div>
+      <a href="gym-feature-attendance.html" class="checkin-btn" style="text-decoration:none;">
+        <i data-lucide="scan-line"></i> Check-In Member
+      </a>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card red-card">
+        <div class="kpi-top">
+          <div class="kpi-icon white"><i data-lucide="users"></i></div>
+          <span class="kpi-trend white"><i data-lucide="trending-up"></i> Live</span>
+        </div>
+        <div class="kpi-value" id="kpiActiveMembers">0</div>
+        <div class="kpi-label">Active Members</div>
+        <div class="kpi-sub"><i data-lucide="arrow-up"></i> Syncing from database...</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon green"><i data-lucide="indian-rupee"></i></div>
+          <span class="kpi-trend up"><i data-lucide="trending-up"></i> 30-Day</span>
+        </div>
+        <div class="kpi-value" id="kpiRevenue">₹0</div>
+        <div class="kpi-label">Revenue This Month</div>
+        <div class="kpi-sub"><i data-lucide="target"></i> Based on active plans</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon yellow"><i data-lucide="alert-circle"></i></div>
+          <span class="kpi-trend down"><i data-lucide="alert-triangle"></i> Attention</span>
+        </div>
+        <div class="kpi-value" id="kpiExpiring">0</div>
+        <div class="kpi-label">Expiring This Week</div>
+        <div class="kpi-sub"><i data-lucide="clock"></i> Memberships ending soon</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon blue"><i data-lucide="dumbbell"></i></div>
+          <span class="kpi-trend up" id="kpiEqTrend"><i data-lucide="check"></i> OK</span>
+        </div>
+        <div class="kpi-value" id="kpiEqTotal">0</div>
+        <div class="kpi-label">Equipment Total</div>
+        <div class="kpi-sub" id="kpiEqSub"><i data-lucide="wrench"></i> 0 under maintenance</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Revenue Overview</div>
+            <div class="chart-subtitle">Monthly collections in ₹ (Mock Demo Data)</div>
+          </div>
+          <div class="chart-tabs">
+            <button class="chart-tab active">6M</button>
+            <button class="chart-tab">1Y</button>
+            <button class="chart-tab">All</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Plan Distribution</div>
+            <div class="chart-subtitle">Members by plan type</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="planChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-row">
+
+      <!-- RECENT MEMBERS -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">Recent Members</div>
+          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">View all <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div id="recentMembersContainer">Loading...</div>
+      </div>
+
+      <!-- EXPIRING SOON + ACTIVITY -->
+      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+
+        <div class="list-card">
+          <div class="list-header">
+            <div class="list-title">⚠️ Expiring Soon</div>
+            <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
+          </div>
+          <div id="expiringMembersContainer">Loading...</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <script>
+lucide.createIcons();
+
+document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
 const SUPABASE_URL = 'https://oibhxzxplyqlnjfvtfug.supabase.co/rest/v1';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pYmh4enhwbHlxbG5qZnZ0ZnVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODI0OTksImV4cCI6MjA5Mzg1ODQ5OX0.jp3L_ltKA1RqH7v1v3KqOBF05Ql3HK2y7vfilt9upAM';
-const TABLE = 'members';
-
-const headers = {
-  'Content-Type': 'application/json',
-  'apikey': ANON_KEY,
-  'Authorization': 'Bearer ' + ANON_KEY,
-  'Prefer': 'return=representation'
-};
-
-function showMsg(text, type) {
-  const el = document.getElementById('msg');
-  el.textContent = text;
-  el.className = 'msg ' + type;
-  setTimeout(() => el.className = 'msg', 3000);
-}
-
-function initDate() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('f_start').value = today;
-  updateEndDate();
-}
-
-function getInitials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
+const headers = { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY };
+const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
 
 function calcExpiry(start, plan) {
   if (!start || !plan) return '—';
   const d = new Date(start);
   const map = { monthly: 30, quarterly: 90, half_yearly: 180, yearly: 365 };
   d.setDate(d.getDate() + (map[plan] || 30));
-  return d.toISOString().split('T')[0];
+  return d;
 }
 
-function updateEndDate() {
-  const start = document.getElementById('f_start').value;
-  const plan = document.getElementById('f_plan').value;
-  if (start && plan) {
-    const end = calcExpiry(start, plan);
-    document.getElementById('f_end').value = end !== '—' ? end : '';
-  } else {
-    document.getElementById('f_end').value = '';
-  }
+function getInitials(name) {
+  return (name||'?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function renderCards(members) {
-  const container = document.getElementById('cardsContainer');
-  const emptyMsg = document.getElementById('emptyMsg');
-  const active = members.filter(m => m.status === 'active').length;
-  const expired = members.filter(m => m.status === 'expired').length;
-  
-  const PLAN_PRICES = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
-  let monthRev = 0;
-  let yearRev = 0;
-  const now = new Date();
-  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(now.getDate() - 30);
-  const oneYearAgo = new Date(); oneYearAgo.setDate(now.getDate() - 365);
+const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
 
-  members.forEach(m => {
-    const start = new Date(m.start_date);
-    const price = PLAN_PRICES[m.plan] || 0;
-    if (!isNaN(start)) {
-      if (start >= thirtyDaysAgo) monthRev += price;
-      if (start >= oneYearAgo) yearRev += price;
-    }
-  });
+let planChartInstance = null;
 
-  const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
-
-  document.getElementById('totalCount').textContent = members.length;
-  document.getElementById('activeCount').textContent = active;
-  document.getElementById('expiredCount').textContent = expired;
-  document.getElementById('monthRev').textContent = formatINR(monthRev);
-  document.getElementById('yearRev').textContent = formatINR(yearRev);
-
-  if (!members.length) {
-    container.innerHTML = '<div class="empty" id="emptyMsg">No members yet. Add your first member above!</div>';
-    return;
-  }
-
-  container.innerHTML = members.map(m => {
-    const expiry = calcExpiry(m.start_date, m.plan);
-    const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
-    return `
-    <div class="card">
-      <div class="card-avatar">${getInitials(m.name || '?')}</div>
-      <div class="card-name">${m.name}</div>
-      <div class="card-plan">${planLabel}</div>
-      <div class="card-info">
-        <div class="card-row"><span class="lbl">📞 Phone</span><span class="val">${m.phone || '—'}</span></div>
-        ${m.email ? `<div class="card-row"><span class="lbl">✉️ Email</span><span class="val">${m.email}</span></div>` : ''}
-        <div class="card-row"><span class="lbl">📅 Start</span><span class="val">${m.start_date || '—'}</span></div>
-        <div class="card-row"><span class="lbl">⏳ Expires</span><span class="val">${expiry}</span></div>
-        <div class="card-row"><span class="lbl">Status</span><span class="val"><span class="badge ${m.status}">${m.status}</span></span></div>
-        <button class="btn" style="margin-top:14px;width:100%;padding:8px;font-size:.8rem;border-radius:10px;" onclick="openRenewModal('${m.id}', '${(m.name || '').replace(/'/g, "\\'")}', '${m.plan}')">↻ Renew Membership</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function loadMembers() {
+async function loadDashboard() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}?order=created_at.desc`, { headers });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    renderCards(data);
-  } catch (e) {
-    document.getElementById('cardsContainer').innerHTML = `<div class="empty">⚠️ Could not load members: ${e.message}</div>`;
-  }
-}
-
-async function addMember() {
-  const name = document.getElementById('f_name').value.trim();
-  const phone = document.getElementById('f_phone').value.trim();
-  const email = document.getElementById('f_email').value.trim();
-  const dob = document.getElementById('f_dob').value;
-  const plan = document.getElementById('f_plan').value;
-  const start = document.getElementById('f_start').value;
-  const end = document.getElementById('f_end').value;
-  const status = document.getElementById('f_status').value;
-
-  if (!name || !phone || !plan || !start) {
-    showMsg('Please fill in all required fields (*)', 'err');
-    return;
-  }
-
-  const btn = document.getElementById('addBtn');
-  btn.disabled = true;
-  btn.textContent = 'Adding...';
-
-  const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, end_date: end, status };
-
-  try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(await res.text());
-    showMsg('✅ Member added successfully!', 'ok');
-    ['f_name','f_phone','f_email','f_dob'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f_plan').value = '';
-    document.getElementById('f_status').value = 'active';
-    initDate();
-    loadMembers();
-  } catch (e) {
-    showMsg('❌ Error: ' + e.message, 'err');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Add Member';
-  }
-}
-
-function openRenewModal(id, name, currentPlan) {
-  document.getElementById('r_id').value = id;
-  document.getElementById('r_name').textContent = name;
-  document.getElementById('r_plan').value = currentPlan || 'monthly';
-  
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('r_start').value = today;
-  
-  updateRenewEndDate();
-  document.getElementById('renewModal').classList.add('active');
-}
-
-function closeRenewModal() {
-  document.getElementById('renewModal').classList.remove('active');
-}
-
-function updateRenewEndDate() {
-  const start = document.getElementById('r_start').value;
-  const plan = document.getElementById('r_plan').value;
-  if (start && plan) {
-    const end = calcExpiry(start, plan);
-    document.getElementById('r_end').value = end !== '—' ? end : '';
-  } else {
-    document.getElementById('r_end').value = '';
-  }
-}
-
-async function submitRenewal() {
-  const id = document.getElementById('r_id').value;
-  const plan = document.getElementById('r_plan').value;
-  const start = document.getElementById('r_start').value;
-  const end = document.getElementById('r_end').value;
-
-  if (!plan || !start) {
-    alert('Please fill in all required fields.');
-    return;
-  }
-
-  const btn = document.getElementById('renewBtn');
-  btn.disabled = true;
-  btn.textContent = 'Renewing...';
-
-  try {
-    const res = await fetch(`${SUPABASE_URL}/${TABLE}?id=eq.${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ plan: plan, start_date: start, end_date: end, status: 'active' })
-    });
-    if (!res.ok) throw new Error(await res.text());
+    const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
+    const members = await res.json();
     
-    showMsg('✅ Membership renewed successfully!', 'ok');
-    closeRenewModal();
-    loadMembers();
-  } catch (e) {
-    alert('❌ Error renewing: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Confirm Renewal';
+    // Process Data
+    const now = new Date();
+    const activeMembers = members.filter(m => m.status === 'active');
+    document.getElementById('sidebarMembersCount').textContent = activeMembers.length;
+    document.getElementById('kpiActiveMembers').textContent = activeMembers.length;
+    
+    let monthRev = 0;
+    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(now.getDate() - 30);
+    const inSevenDays = new Date(); inSevenDays.setDate(now.getDate() + 7);
+    
+    let expiringCount = 0;
+    const expiringMembersList = [];
+    
+    const plansCount = { monthly: 0, quarterly: 0, half_yearly: 0, yearly: 0 };
+
+    members.forEach(m => {
+      const start = new Date(m.start_date);
+      const price = PLAN_PRICES[m.plan] || 0;
+      if (start >= thirtyDaysAgo) monthRev += price;
+      
+      if (m.status === 'active' && m.plan) {
+        plansCount[m.plan] = (plansCount[m.plan] || 0) + 1;
+        const expDate = calcExpiry(m.start_date, m.plan);
+        if (expDate !== '—') {
+          const daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+          if (daysLeft >= 0 && daysLeft <= 7) {
+            expiringCount++;
+            expiringMembersList.push({ ...m, daysLeft });
+          }
+        }
+      }
+    });
+
+    document.getElementById('kpiRevenue').textContent = formatINR(monthRev);
+    document.getElementById('kpiExpiring').textContent = expiringCount;
+    
+    // Live Check-ins
+    const todayStr = new Date().toISOString().split('T')[0];
+    const attendanceLogs = JSON.parse(localStorage.getItem('gymProAttendance') || '{}');
+    const checkedInToday = attendanceLogs[todayStr] ? attendanceLogs[todayStr].length : 0;
+    document.getElementById('liveCheckinCount').textContent = checkedInToday;
+    document.getElementById('liveCapacity').textContent = activeMembers.length > 0 ? Math.round((checkedInToday / activeMembers.length) * 100) + '%' : '0%';
+
+    // Equipment
+    const eqList = JSON.parse(localStorage.getItem('gymProEq') || '[]');
+    const maintCount = eqList.filter(e => e.status !== 'operational').length;
+    document.getElementById('kpiEqTotal').textContent = eqList.length;
+    document.getElementById('kpiEqSub').innerHTML = `<i data-lucide="wrench"></i> ${maintCount} needs attention`;
+    if(maintCount > 0) {
+      document.getElementById('kpiEqTrend').className = 'kpi-trend down';
+      document.getElementById('kpiEqTrend').innerHTML = `<i data-lucide="alert-triangle"></i> Alert`;
+    }
+
+    // Recent Members (Max 5)
+    const recentHtml = members.slice(0,5).map((m, i) => {
+      const colors = [
+        'linear-gradient(135deg,#c8102e,#9e0b22)',
+        'linear-gradient(135deg,#5b9cf6,#2563eb)',
+        'linear-gradient(135deg,#f5a623,#c17d10)',
+        'linear-gradient(135deg,#4caf7d,#2e7d52)',
+        'linear-gradient(135deg,#a86fdf,#7c3aed)'
+      ];
+      const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
+      const price = formatINR(PLAN_PRICES[m.plan] || 0);
+      const statusClass = m.status === 'active' ? 'status-active' : (m.status === 'expired' ? 'status-expired' : 'status-expiring');
+      return `
+        <div class="member-row">
+          <div class="member-avatar" style="background:${colors[i%colors.length]};">${getInitials(m.name)}</div>
+          <div class="member-info">
+            <div class="member-name">${m.name}</div>
+            <div class="member-plan">${planLabel} · ${price}</div>
+          </div>
+          <span class="member-status ${statusClass}">${m.status}</span>
+        </div>`;
+    }).join('');
+    document.getElementById('recentMembersContainer').innerHTML = recentHtml || '<div style="color:#aaa;font-size:12px;">No members found.</div>';
+
+    // Expiring Soon
+    expiringMembersList.sort((a,b) => a.daysLeft - b.daysLeft);
+    const expiringHtml = expiringMembersList.slice(0,4).map(m => {
+      let daysClass = 'days-7';
+      if(m.daysLeft <= 1) daysClass = 'days-1';
+      else if(m.daysLeft <= 3) daysClass = 'days-3';
+      const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
+      return `
+        <div class="expiry-row">
+          <span class="expiry-days ${daysClass}">${m.daysLeft} day${m.daysLeft !== 1 ? 's' : ''}</span>
+          <div>
+            <div class="expiry-name">${m.name}</div>
+            <div class="expiry-plan">${planLabel}</div>
+          </div>
+        </div>`;
+    }).join('');
+    document.getElementById('expiringMembersContainer').innerHTML = expiringHtml || '<div style="color:#aaa;font-size:12px;">No members expiring soon.</div>';
+
+    // Update Plan Chart
+    if (planChartInstance) planChartInstance.destroy();
+    const pCtx = document.getElementById('planChart').getContext('2d');
+    planChartInstance = new Chart(pCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Monthly','Quarterly','Half-Yearly','Yearly'],
+        datasets: [{
+          data: [plansCount.monthly, plansCount.quarterly, plansCount.half_yearly, plansCount.yearly],
+          backgroundColor:['#C8102E','#5b9cf6','#4caf7d','#f5a623'],
+          borderWidth:0, hoverOffset:6,
+        }]
+      },
+      options: {
+        responsive:true,maintainAspectRatio:false, cutout:'68%',
+        plugins:{ legend:{position:'bottom',labels:{color:'#8a8080',font:{size:11},padding:12,boxWidth:10,boxHeight:10,useBorderRadius:true}}, tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}}
+      }
+    });
+
+    lucide.createIcons();
+  } catch(e) {
+    console.error(e);
   }
 }
 
-initDate();
-loadMembers();
+// Revenue Chart (Mock data as it's complex to build historical data from just start_date)
+const rCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(rCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Dec','Jan','Feb','Mar','Apr','May'],
+    datasets: [{
+      label: 'Revenue',
+      data: [145000,162000,138000,175000,168000,184000],
+      backgroundColor: (ctx) => {
+        const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+        g.addColorStop(0,'rgba(200,16,46,0.85)');
+        g.addColorStop(1,'rgba(200,16,46,0.2)');
+        return g;
+      },
+      borderRadius: 6, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',
+      borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+      callbacks:{label:(ctx)=>'₹'+ctx.raw.toLocaleString('en-IN')}
+    }},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#8a8080',font:{size:11}}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8080',font:{size:11},callback:(v)=>'₹'+(v/1000)+'K'}}
+    }
+  }
+});
+
+loadDashboard();
 </script>
 </body>
 </html>

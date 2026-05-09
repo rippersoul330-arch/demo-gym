@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymPro Suite — Settings</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-6); max-width: 600px;}
+  .form-group {margin-bottom: var(--space-4);}
+</style>
+</head>
+<body>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M2 8.5C2 7.1 3.1 6 4.5 6S7 7.1 7 8.5 5.9 11 4.5 11 2 9.9 2 8.5zM17 8.5c0-1.4 1.1-2.5 2.5-2.5S22 7.1 22 8.5 20.9 11 19.5 11 17 9.9 17 8.5zM2 15.5C2 14.1 3.1 13 4.5 13S7 14.1 7 15.5 5.9 18 4.5 18 2 16.9 2 15.5zM17 15.5c0-1.4 1.1-2.5 2.5-2.5S22 14.1 22 15.5 20.9 18 19.5 18 17 16.9 17 15.5z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text" id="sidebarGymName">GYMPRO</div>
+      <div class="sidebar-logo-sub">Corp Management</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Main</div>
+  <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members</a>
+  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
+  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
+
+  <div class="nav-section-label">Finance</div>
+  <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
+
+  <div class="nav-section-label">Manage</div>
+  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
+  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
+  <a href="gym-feature-settings.html" class="nav-item active"><i data-lucide="settings"></i> Settings</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Settings</h1>
+      <p>Configure gym profile</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="card">
+      <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-5); color:var(--red);">Gym Profile</h2>
+      <div class="form-group">
+        <label>Gym Name</label>
+        <input type="text" id="s_name" value="GYMPRO" />
+      </div>
+      <div class="form-group">
+        <label>Admin Email</label>
+        <input type="email" id="s_email" value="admin@gympro.com" />
+      </div>
+      <button class="btn-primary" onclick="saveSettings()" style="width: 100%;">Save Settings</button>
+      <div id="msg" style="margin-top: 16px; text-align:center; color: var(--green); font-weight: 600; display:none;">Settings Saved!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+function loadSettings() {
+  const name = localStorage.getItem('gymProName') || 'GYMPRO';
+  document.getElementById('s_name').value = name;
+  document.getElementById('sidebarGymName').textContent = name.toUpperCase();
+}
+
+function saveSettings() {
+  const name = document.getElementById('s_name').value.trim() || 'GYMPRO';
+  localStorage.setItem('gymProName', name);
+  document.getElementById('sidebarGymName').textContent = name.toUpperCase();
+  
+  const msg = document.getElementById('msg');
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display='none', 3000);
+}
+
+loadSettings();
+</script>
+</body>
+</html>
