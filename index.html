@@ -29,15 +29,10 @@
   <div class="nav-section-label">Main</div>
   <a href="index.html" class="nav-item active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members <span class="nav-badge" id="sidebarMembersCount">0</span></a>
-  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
-  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
 
   <div class="nav-section-label">Finance</div>
   <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
 
-  <div class="nav-section-label">Manage</div>
-  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
-  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
   <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
 
   <div class="sidebar-bottom">
@@ -78,32 +73,23 @@
   <!-- CONTENT -->
   <div class="content">
 
-    <!-- LIVE CHECK-IN BANNER -->
-    <div class="checkin-banner">
-      <div>
-        <div class="checkin-live"><div class="live-dot"></div> Live Today</div>
-        <div class="checkin-count" id="liveCheckinCount">0</div>
-        <div class="checkin-label">Members checked in</div>
-      </div>
-      <div class="checkin-divider"></div>
-      <div>
-        <div class="checkin-live">Peak Hour</div>
-        <div class="checkin-count">6–8 PM</div>
-        <div class="checkin-label">Most active window</div>
-      </div>
-      <div class="checkin-divider"></div>
-      <div>
-        <div class="checkin-live">Capacity</div>
-        <div class="checkin-count" id="liveCapacity">0%</div>
-        <div class="checkin-label">Floor utilisation</div>
-      </div>
-      <a href="gym-feature-attendance.html" class="checkin-btn" style="text-decoration:none;">
-        <i data-lucide="scan-line"></i> Check-In Member
-      </a>
-    </div>
+
 
     <!-- KPI CARDS -->
     <div class="kpi-grid">
+
+      <!-- 1. Total Members -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon blue"><i data-lucide="users-round"></i></div>
+          <span class="kpi-trend up"><i data-lucide="database"></i> All</span>
+        </div>
+        <div class="kpi-value" id="kpiTotalMembers">0</div>
+        <div class="kpi-label">Total Members</div>
+        <div class="kpi-sub"><i data-lucide="user-check"></i> <span id="kpiTotalSub">All registered members</span></div>
+      </div>
+
+      <!-- 2. Active Members -->
       <div class="kpi-card red-card">
         <div class="kpi-top">
           <div class="kpi-icon white"><i data-lucide="users"></i></div>
@@ -114,65 +100,58 @@
         <div class="kpi-sub"><i data-lucide="arrow-up"></i> Syncing from database...</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon green"><i data-lucide="indian-rupee"></i></div>
-          <span class="kpi-trend up"><i data-lucide="trending-up"></i> 30-Day</span>
-        </div>
-        <div class="kpi-value" id="kpiRevenue">₹0</div>
-        <div class="kpi-label">Revenue This Month</div>
-        <div class="kpi-sub"><i data-lucide="target"></i> Based on active plans</div>
-      </div>
-
+      <!-- 3. Expiring / Due -->
       <div class="kpi-card">
         <div class="kpi-top">
           <div class="kpi-icon yellow"><i data-lucide="alert-circle"></i></div>
           <span class="kpi-trend down"><i data-lucide="alert-triangle"></i> Attention</span>
         </div>
         <div class="kpi-value" id="kpiExpiring">0</div>
-        <div class="kpi-label">Expiring This Week</div>
+        <div class="kpi-label">Expiring / Due</div>
         <div class="kpi-sub"><i data-lucide="clock"></i> Memberships ending soon</div>
       </div>
 
-      <div class="kpi-card">
+      <!-- 4. Finance Summary -->
+      <a href="gym-feature-finance.html" class="kpi-card" style="text-decoration:none;cursor:pointer;transition:border-color 0.2s,transform 0.2s;" onmouseover="this.style.borderColor='var(--red)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
         <div class="kpi-top">
-          <div class="kpi-icon blue"><i data-lucide="dumbbell"></i></div>
-          <span class="kpi-trend up" id="kpiEqTrend"><i data-lucide="check"></i> OK</span>
+          <div class="kpi-icon green"><i data-lucide="landmark"></i></div>
+          <span class="kpi-trend up"><i data-lucide="arrow-right"></i> Finance</span>
         </div>
-        <div class="kpi-value" id="kpiEqTotal">0</div>
-        <div class="kpi-label">Equipment Total</div>
-        <div class="kpi-sub" id="kpiEqSub"><i data-lucide="wrench"></i> 0 under maintenance</div>
-      </div>
+        <div style="margin-top: var(--space-3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--divider);">
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">This Month</span>
+            <span style="font-size:var(--text-sm);font-weight:700;color:var(--text);" id="dashMonthRev">₹0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--divider);">
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">Pending</span>
+            <span style="font-size:var(--text-sm);font-weight:700;color:var(--yellow);" id="dashPending">₹0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">Overdue</span>
+            <span style="font-size:var(--text-sm);font-weight:700;color:#ff6b6b;" id="dashOverdue">₹0</span>
+          </div>
+        </div>
+        <div class="kpi-sub" style="margin-top:var(--space-2);"><i data-lucide="external-link"></i> View full Finance page</div>
+      </a>
+
     </div>
 
-    <!-- CHARTS -->
-    <div class="charts-row">
+    <!-- MEMBER GROWTH CHART (full width) -->
+    <div style="margin-bottom: var(--space-5);">
       <div class="chart-card">
         <div class="chart-header">
           <div>
-            <div class="chart-title">Revenue Overview</div>
-            <div class="chart-subtitle" id="revChartSubtitle">Monthly collections in ₹ (Last 6 Months)</div>
+            <div class="chart-title">Member Growth</div>
+            <div class="chart-subtitle" id="memberChartSubtitle">New members joined per month (Last 6 Months)</div>
           </div>
           <div class="chart-tabs">
-            <button id="btn-rev-6m" class="chart-tab active" onclick="setRevenueChartRange(6, 'btn-rev-6m')">6M</button>
-            <button id="btn-rev-1y" class="chart-tab" onclick="setRevenueChartRange(12, 'btn-rev-1y')">1Y</button>
-            <button id="btn-rev-all" class="chart-tab" onclick="setRevenueChartRange(24, 'btn-rev-all')">All</button>
+            <button id="btn-mem-6m" class="chart-tab active" onclick="setMemberChartRange(6, 'btn-mem-6m')">6M</button>
+            <button id="btn-mem-1y" class="chart-tab" onclick="setMemberChartRange(12, 'btn-mem-1y')">1Y</button>
+            <button id="btn-mem-all" class="chart-tab" onclick="setMemberChartRange(24, 'btn-mem-all')">All</button>
           </div>
         </div>
         <div class="chart-wrap">
-          <canvas id="revenueChart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title">Plan Distribution</div>
-            <div class="chart-subtitle">Members by plan type</div>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="planChart"></canvas>
+          <canvas id="memberChart"></canvas>
         </div>
       </div>
     </div>
@@ -180,24 +159,22 @@
     <!-- BOTTOM ROW -->
     <div class="bottom-row">
 
-      <!-- RECENT MEMBERS -->
+      <!-- EXPIRING SOON (left) -->
+      <div class="list-card">
+        <div class="list-header">
+          <div class="list-title">⚠️ Expiring Soon</div>
+          <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div id="expiringMembersContainer">Loading...</div>
+      </div>
+
+      <!-- RECENT MEMBERS (right) -->
       <div class="list-card">
         <div class="list-header">
           <div class="list-title">Recent Members</div>
           <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">View all <i data-lucide="arrow-right"></i></a>
         </div>
         <div id="recentMembersContainer">Loading...</div>
-      </div>
-
-      <!-- EXPIRING SOON + ACTIVITY -->
-      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
-        <div class="list-card">
-          <div class="list-header">
-            <div class="list-title">⚠️ Expiring Soon</div>
-            <a href="gym-feature-members.html" class="view-all" style="text-decoration:none;">Manage <i data-lucide="arrow-right"></i></a>
-          </div>
-          <div id="expiringMembersContainer">Loading...</div>
-        </div>
       </div>
 
     </div>
@@ -283,6 +260,7 @@ function showToast(msg, type='success') {
 
 let planChartInstance = null;
 let revenueChartInstance = null;
+let memberChartInstance = null;
 let allMembers = [];
 
 async function loadDashboard() {
@@ -294,10 +272,16 @@ async function loadDashboard() {
     // Process Data
     const now = new Date();
     const activeMembers = members.filter(m => m.status === 'active');
+    const pendingMembers = members.filter(m => m.status === 'pending');
+    const expiredMembers = members.filter(m => m.status === 'expired');
     document.getElementById('sidebarMembersCount').textContent = activeMembers.length;
     document.getElementById('kpiActiveMembers').textContent = activeMembers.length;
+    document.getElementById('kpiTotalMembers').textContent = members.length;
+    document.getElementById('kpiTotalSub').textContent = `${activeMembers.length} active · ${pendingMembers.length} pending · ${expiredMembers.length} expired`;
     
-    let monthRev = 0;
+    let monthRev = 0, pendingTotal = 0, overdueTotal = 0;
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(now.getDate() - 30);
     
     let expiringCount = 0;
@@ -320,8 +304,13 @@ async function loadDashboard() {
       const start = new Date(m.start_date);
       const price = PLAN_PRICES[m.plan] || 0;
       
-      // Calculate active plan KPI
-      if (start >= thirtyDaysAgo) monthRev += price;
+      // Calculate revenue
+      if (m.status === 'active' && m.start_date) {
+        const startDate = new Date(m.start_date);
+        if (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) monthRev += price;
+      }
+      if (m.status === 'pending') pendingTotal += price;
+      if (m.status === 'expired') overdueTotal += price;
       
       if (m.plan) {
         if (m.status === 'active') {
@@ -350,7 +339,9 @@ async function loadDashboard() {
       }
     });
 
-    document.getElementById('kpiRevenue').textContent = formatINR(monthRev);
+    document.getElementById('dashMonthRev').textContent = formatINR(monthRev);
+    document.getElementById('dashPending').textContent = formatINR(pendingTotal);
+    document.getElementById('dashOverdue').textContent = formatINR(overdueTotal);
     document.getElementById('kpiExpiring').textContent = expiringCount;
     
     // Live Check-ins
@@ -467,6 +458,9 @@ async function loadDashboard() {
       }
     });
 
+    // Render member growth chart
+    setMemberChartRange(6, 'btn-mem-6m');
+
     lucide.createIcons();
   } catch(e) {
     console.error(e);
@@ -580,6 +574,74 @@ function setRevenueChartRange(months, btnId) {
     revenueChartInstance.data.labels = revLabels;
     revenueChartInstance.data.datasets[0].data = revData;
     revenueChartInstance.update();
+  }
+}
+
+function setMemberChartRange(months, btnId) {
+  ['btn-mem-6m', 'btn-mem-1y', 'btn-mem-all'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('active');
+  });
+  if(btnId) document.getElementById(btnId).classList.add('active');
+
+  const subtitle = document.getElementById('memberChartSubtitle');
+  if(subtitle) subtitle.textContent = `New members joined per month (Last ${months === 24 ? '2 Years' : (months === 12 ? '1 Year' : '6 Months')})`;
+
+  const now = new Date();
+  const labels = [];
+  const data = [];
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  for(let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    labels.push(months > 6 ? `${monthNames[d.getMonth()]} '${d.getFullYear().toString().slice(2)}` : monthNames[d.getMonth()]);
+    data.push(0);
+  }
+
+  allMembers.forEach(m => {
+    if (m.start_date) {
+      const start = new Date(m.start_date);
+      for(let i = 0; i < months; i++) {
+        const target = new Date(now.getFullYear(), now.getMonth() - ((months-1)-i), 1);
+        if (start.getMonth() === target.getMonth() && start.getFullYear() === target.getFullYear()) {
+          data[i]++;
+        }
+      }
+    }
+  });
+
+  const mCtx = document.getElementById('memberChart').getContext('2d');
+  if (memberChartInstance) {
+    memberChartInstance.data.labels = labels;
+    memberChartInstance.data.datasets[0].data = data;
+    memberChartInstance.update();
+  } else {
+    memberChartInstance = new Chart(mCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Members',
+          data,
+          backgroundColor: (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, 'rgba(91,156,246,0.85)');
+            g.addColorStop(1, 'rgba(91,156,246,0.2)');
+            return g;
+          },
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false}, tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:(ctx)=>`${ctx.raw} member${ctx.raw!==1?'s':''}`}} },
+        scales: {
+          x: { grid:{display:false}, ticks:{color:'#8a8080',font:{size:11}} },
+          y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8a8080',font:{size:11},stepSize:1,callback:v=>Math.floor(v)===v?v:''}, beginAtZero:true }
+        }
+      }
+    });
   }
 }
 </script>

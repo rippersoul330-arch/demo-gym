@@ -6,15 +6,15 @@
 <title>GymPro Suite — Finance</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  .filter-chips { display: flex; gap: var(--space-2); margin-top: var(--space-4); margin-bottom: var(--space-4); }
+  .filter-chips { display: flex; gap: var(--space-2); margin-top: var(--space-4); margin-bottom: var(--space-4); flex-wrap: wrap; }
   .chip { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .chip:hover { background: var(--surface-3); color: var(--text); }
   .chip.active { background: var(--red-soft); color: var(--red); border-color: var(--red); }
   .search-wrap { position: relative; width: 100%; max-width: 300px; }
   .search-wrap input { padding-left: 36px; }
   .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; }
-  
   .controls-row { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-5); flex-wrap: wrap; gap: var(--space-4); }
 </style>
 </head>
@@ -37,15 +37,10 @@
   <div class="nav-section-label">Main</div>
   <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   <a href="gym-feature-members.html" class="nav-item"><i data-lucide="users"></i> Members</a>
-  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
-  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
 
   <div class="nav-section-label">Finance</div>
   <a href="gym-feature-finance.html" class="nav-item active"><i data-lucide="landmark"></i> Finance</a>
 
-  <div class="nav-section-label">Manage</div>
-  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
-  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
   <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
 </aside>
 
@@ -103,6 +98,38 @@
         <div class="kpi-value" id="f_overdueTotal">₹0</div>
         <div class="kpi-label">Overdue Amount</div>
         <div class="kpi-sub" id="f_overdueCount"><i data-lucide="users"></i> 0 expired members unpaid</div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row" style="margin-top: var(--space-5);">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Revenue Overview</div>
+            <div class="chart-subtitle" id="revChartSubtitle">Monthly collections in ₹ (Last 6 Months)</div>
+          </div>
+          <div class="chart-tabs">
+            <button id="btn-rev-6m" class="chart-tab active" onclick="setRevenueChartRange(6, 'btn-rev-6m')">6M</button>
+            <button id="btn-rev-1y" class="chart-tab" onclick="setRevenueChartRange(12, 'btn-rev-1y')">1Y</button>
+            <button id="btn-rev-all" class="chart-tab" onclick="setRevenueChartRange(24, 'btn-rev-all')">All</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Plan Distribution</div>
+            <div class="chart-subtitle">Members by plan type</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="planChart"></canvas>
+        </div>
       </div>
     </div>
 
@@ -198,6 +225,8 @@ const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', c
 
 let allMembers = [];
 let currentFilter = 'all';
+let planChartInstance = null;
+let revenueChartInstance = null;
 
 function showToast(msg, type='success') {
   const container = document.getElementById('toast-container');
@@ -249,6 +278,7 @@ async function loadFinanceData() {
     document.getElementById('f_overdueCount').innerHTML = `<i data-lucide="users"></i> ${overdueCount} expired member${overdueCount !== 1 ? 's' : ''} unpaid`;
     
     renderTable();
+    renderCharts();
   } catch (e) {
     showToast("Failed to load data", "error");
   }
@@ -375,6 +405,85 @@ async function submitRenewal() {
 }
 
 loadFinanceData();
+
+function renderCharts() {
+  const PLAN_PRICES_L = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
+
+  // Plan distribution
+  const plansCount = { monthly: 0, quarterly: 0, half_yearly: 0, yearly: 0 };
+  allMembers.filter(m => m.status === 'active').forEach(m => {
+    if (m.plan) plansCount[m.plan] = (plansCount[m.plan] || 0) + 1;
+  });
+
+  if (planChartInstance) planChartInstance.destroy();
+  const pCtx = document.getElementById('planChart').getContext('2d');
+  planChartInstance = new Chart(pCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Monthly','Quarterly','Half-Yearly','Yearly'],
+      datasets: [{ data: [plansCount.monthly, plansCount.quarterly, plansCount.half_yearly, plansCount.yearly], backgroundColor:['#C8102E','#5b9cf6','#4caf7d','#f5a623'], borderWidth:0, hoverOffset:6 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{position:'bottom',labels:{color:'#8a8080',font:{size:11},padding:12,boxWidth:10,boxHeight:10,useBorderRadius:true}}, tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1} } }
+  });
+
+  setRevenueChartRange(6, 'btn-rev-6m');
+}
+
+function setRevenueChartRange(months, btnId) {
+  ['btn-rev-6m', 'btn-rev-1y', 'btn-rev-all'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('active');
+  });
+  if(btnId) document.getElementById(btnId).classList.add('active');
+
+  const subtitle = document.getElementById('revChartSubtitle');
+  if(subtitle) subtitle.textContent = `Monthly collections in ₹ (Last ${months === 24 ? '2 Years' : (months === 12 ? '1 Year' : '6 Months')})`;
+
+  const now = new Date();
+  const revLabels = [];
+  const revData = [];
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const PLAN_PRICES_L = { monthly: 1500, quarterly: 4000, half_yearly: 7500, yearly: 12000 };
+
+  for(let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    revLabels.push(months > 6 ? `${monthNames[d.getMonth()]} '${d.getFullYear().toString().slice(2)}` : monthNames[d.getMonth()]);
+    revData.push(0);
+  }
+
+  allMembers.forEach(m => {
+    if (m.status === 'active' && m.start_date) {
+      const start = new Date(m.start_date);
+      const price = PLAN_PRICES_L[m.plan] || 0;
+      for(let i=0; i<months; i++) {
+        const target = new Date(now.getFullYear(), now.getMonth() - ((months-1)-i), 1);
+        if (start.getMonth() === target.getMonth() && start.getFullYear() === target.getFullYear()) {
+          revData[i] += price;
+        }
+      }
+    }
+  });
+
+  const rCtx = document.getElementById('revenueChart').getContext('2d');
+  if (revenueChartInstance) {
+    revenueChartInstance.data.labels = revLabels;
+    revenueChartInstance.data.datasets[0].data = revData;
+    revenueChartInstance.update();
+  } else {
+    revenueChartInstance = new Chart(rCtx, {
+      type: 'bar',
+      data: {
+        labels: revLabels,
+        datasets: [{ label: 'Revenue', data: revData, backgroundColor: 'rgba(200,16,46,0.7)', borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1c1717', titleColor:'#f0eded', bodyColor:'#8a8080', callbacks: { label: ctx => ` ₹${ctx.parsed.y.toLocaleString('en-IN')}` } } },
+        scales: { x: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#666'} }, y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#666', callback: v => '₹'+v.toLocaleString('en-IN')}, beginAtZero:true } }
+      }
+    });
+  }
+}
 
 function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('mobile-open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
 </script>

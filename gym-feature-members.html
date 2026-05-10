@@ -29,8 +29,16 @@
   .badge.expired { background: rgba(200,16,46,0.15); color: #ff6b6b; }
   .badge.pending { background: var(--yellow-soft); color: var(--yellow); }
   .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: var(--text-sm); }
-  
-  @media(max-width:600px){.grid,.grid.four{grid-template-columns:1fr}}
+  .filter-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
+  .filter-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; flex-shrink: 0; }
+  .chip { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .chip:hover { background: var(--surface-3); color: var(--text); }
+  .chip.active { background: var(--red-soft); color: var(--red); border-color: var(--red); }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-wrap input { width: 100%; padding-left: 36px; box-sizing: border-box; }
+  .search-wrap .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; pointer-events: none; }
+  .member-count { font-size: var(--text-xs); color: var(--text-muted); font-weight: 600; flex-shrink: 0; padding: 6px 12px; background: var(--surface-2); border-radius: var(--radius-full); border: 1px solid var(--border); }
+  @media(max-width:600px){.grid,.grid.four{grid-template-columns:1fr}.filter-bar{flex-direction:column;align-items:stretch}.search-wrap{min-width:100%}}
 </style>
 </head>
 <body>
@@ -53,15 +61,10 @@
   <div class="nav-section-label">Main</div>
   <a href="index.html" class="nav-item"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   <a href="gym-feature-members.html" class="nav-item active"><i data-lucide="users"></i> Members</a>
-  <a href="gym-feature-attendance.html" class="nav-item"><i data-lucide="scan-line"></i> Check-In</a>
-  <a href="gym-feature-taskboard.html" class="nav-item"><i data-lucide="calendar"></i> Taskboard</a>
 
   <div class="nav-section-label">Finance</div>
   <a href="gym-feature-finance.html" class="nav-item"><i data-lucide="landmark"></i> Finance</a>
 
-  <div class="nav-section-label">Manage</div>
-  <a href="gym-feature-equipment.html" class="nav-item"><i data-lucide="dumbbell"></i> Equipment</a>
-  <a href="gym-feature-reports.html" class="nav-item"><i data-lucide="bar-chart-2"></i> Reports</a>
   <a href="gym-feature-settings.html" class="nav-item"><i data-lucide="settings"></i> Settings</a>
 </aside>
 
@@ -92,10 +95,6 @@
           <input id="f_phone" placeholder="+1 234 567 8900"/>
         </div>
         <div>
-          <label>Email</label>
-          <input id="f_email" type="email" placeholder="john@email.com"/>
-        </div>
-        <div>
           <label>Date of Birth</label>
           <input id="f_dob" type="date"/>
         </div>
@@ -115,18 +114,6 @@
           <label>Start Date *</label>
           <input id="f_start" type="date" onchange="updateEndDate()"/>
         </div>
-        <div>
-          <label>End Date</label>
-          <input id="f_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
-        </div>
-        <div>
-          <label>Status</label>
-          <select id="f_status">
-            <option value="active">Active (Paid)</option>
-            <option value="pending">Pending</option>
-            <option value="expired">Expired</option>
-          </select>
-        </div>
       </div>
       <div class="btn-row">
         <button class="btn-primary" id="addBtn" onclick="addMember()">Add Member</button>
@@ -134,7 +121,22 @@
     </div>
 
     <!-- Members Grid -->
-    <h2 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4);">Directory</h2>
+    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+      <h2 style="font-size: var(--text-lg); font-weight: 700; margin:0;">Directory</h2>
+      <span class="member-count" id="memberCountBadge">0 members</span>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-chips">
+        <button class="chip active" id="chip-all" onclick="setMemberFilter('all', this)">All</button>
+        <button class="chip" id="chip-active" onclick="setMemberFilter('active', this)">✓ Active</button>
+        <button class="chip" id="chip-pending" onclick="setMemberFilter('pending', this)">⏳ Pending</button>
+        <button class="chip" id="chip-expired" onclick="setMemberFilter('expired', this)">⚠ Expired</button>
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="memberSearch" placeholder="Search by name or phone..." oninput="applyMemberFilter()" />
+      </div>
+    </div>
     <div class="cards" id="cardsContainer">
       <div class="empty" id="emptyMsg">Loading members...</div>
     </div>
@@ -260,12 +262,36 @@ function renderCards(members) {
   lucide.createIcons();
 }
 
+let allMembersData = [];
+let currentMemberFilter = 'all';
+
+function setMemberFilter(status, el) {
+  currentMemberFilter = status;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  applyMemberFilter();
+}
+
+function applyMemberFilter() {
+  const q = (document.getElementById('memberSearch').value || '').toLowerCase();
+  let filtered = allMembersData.filter(m => {
+    if (currentMemberFilter !== 'all' && m.status !== currentMemberFilter) return false;
+    if (q && !(m.name||'').toLowerCase().includes(q) && !(m.phone||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const badge = document.getElementById('memberCountBadge');
+  if (badge) badge.textContent = `${filtered.length} member${filtered.length !== 1 ? 's' : ''}`;
+  renderCards(filtered);
+}
+
 async function loadMembers() {
   try {
     const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    renderCards(data);
+    allMembersData = await res.json();
+    const badge = document.getElementById('memberCountBadge');
+    if (badge) badge.textContent = `${allMembersData.length} member${allMembersData.length !== 1 ? 's' : ''}`;
+    renderCards(allMembersData);
   } catch (e) {
     document.getElementById('cardsContainer').innerHTML = `<div class="empty">⚠️ Could not load members: ${e.message}</div>`;
   }
@@ -274,27 +300,24 @@ async function loadMembers() {
 async function addMember() {
   const name = document.getElementById('f_name').value.trim();
   const phone = document.getElementById('f_phone').value.trim();
-  const email = document.getElementById('f_email').value.trim();
   const dob = document.getElementById('f_dob').value;
   const plan = document.getElementById('f_plan').value;
   const start = document.getElementById('f_start').value;
-  const end = document.getElementById('f_end').value;
-  const status = document.getElementById('f_status').value;
+  const end = calcExpiry(start, plan);
 
   if (!name || !phone || !plan || !start) return showToast('Please fill in all required fields (*)', 'error');
 
   const btn = document.getElementById('addBtn');
   btn.disabled = true; btn.textContent = 'Adding...';
 
-  const payload = { name, phone, email: email || null, date_of_birth: dob || null, plan, start_date: start, end_date: end, status };
+  const payload = { name, phone, date_of_birth: dob || null, plan, start_date: start, end_date: end, status: 'active' };
 
   try {
     const res = await fetch(`${SUPABASE_URL}/members`, { method: 'POST', headers, body: JSON.stringify(payload) });
     if (!res.ok) throw new Error(await res.text());
     showToast('Member added successfully!');
-    ['f_name','f_phone','f_email','f_dob'].forEach(id => document.getElementById(id).value = '');
+    ['f_name','f_phone','f_dob'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f_plan').value = '';
-    document.getElementById('f_status').value = 'active';
     initDate();
     loadMembers();
   } catch (e) {
