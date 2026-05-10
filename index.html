@@ -321,12 +321,16 @@ async function loadDashboard() {
       // Calculate active plan KPI
       if (start >= thirtyDaysAgo) monthRev += price;
       
-      if (m.status === 'active' && m.plan) {
-        plansCount[m.plan] = (plansCount[m.plan] || 0) + 1;
-        const expDate = calcExpiry(m.start_date, m.plan);
-        if (expDate !== '—') {
+      if (m.plan) {
+        if (m.status === 'active') {
+          plansCount[m.plan] = (plansCount[m.plan] || 0) + 1;
+        }
+        
+        let expDate = m.end_date ? new Date(m.end_date) : calcExpiry(m.start_date, m.plan);
+        if (expDate !== '—' && (m.status === 'active' || m.status === 'expired' || m.status === 'pending')) {
           const daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-          if (daysLeft >= 0 && daysLeft <= 7) {
+          // If they are expiring within 7 days OR are already overdue (daysLeft <= 0)
+          if (daysLeft <= 7) {
             expiringCount++;
             expiringMembersList.push({ ...m, daysLeft });
           }
@@ -392,12 +396,21 @@ async function loadDashboard() {
     expiringMembersList.sort((a,b) => a.daysLeft - b.daysLeft);
     const expiringHtml = expiringMembersList.slice(0,4).map(m => {
       let daysClass = 'days-7';
-      if(m.daysLeft <= 1) daysClass = 'days-1';
-      else if(m.daysLeft <= 3) daysClass = 'days-3';
+      let daysText = `${m.daysLeft} day${m.daysLeft !== 1 ? 's' : ''}`;
+      
+      if(m.daysLeft < 0) {
+        daysClass = 'days-1';
+        daysText = `${Math.abs(m.daysLeft)} days overdue`;
+      } else if(m.daysLeft <= 1) {
+        daysClass = 'days-1';
+      } else if(m.daysLeft <= 3) {
+        daysClass = 'days-3';
+      }
+      
       const planLabel = { monthly:'Monthly', quarterly:'Quarterly', half_yearly:'Half-Yearly', yearly:'Yearly' }[m.plan] || m.plan;
       return `
         <div class="expiry-row">
-          <span class="expiry-days ${daysClass}">${m.daysLeft} day${m.daysLeft !== 1 ? 's' : ''}</span>
+          <span class="expiry-days ${daysClass}">${daysText}</span>
           <div style="flex:1;">
             <div class="expiry-name">${m.name}</div>
             <div class="expiry-plan">${planLabel}</div>
