@@ -221,6 +221,10 @@
 lucide.createIcons();
 
 document.getElementById('topDate').innerHTML = `<i data-lucide="calendar" style="width:12px;height:12px;"></i> ` + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const dashboardSubtitle = document.querySelector('.topbar-left h1 + p');
+if (dashboardSubtitle) {
+  dashboardSubtitle.textContent = 'Hello coach';
+}
 const gymName = localStorage.getItem('gymProName') || 'GYMPRO';
 document.getElementById('sidebarGymName').textContent = gymName.toUpperCase();
 

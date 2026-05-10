@@ -137,9 +137,9 @@
     <div class="filter-bar">
       <div class="filter-chips">
         <button class="chip active" id="chip-all" onclick="setMemberFilter('all', this)">All</button>
-        <button class="chip" id="chip-active" onclick="setMemberFilter('active', this)">? Active</button>
-        <button class="chip" id="chip-pending" onclick="setMemberFilter('pending', this)">? Pending</button>
-        <button class="chip" id="chip-expired" onclick="setMemberFilter('expired', this)">? Expired</button>
+        <button class="chip" id="chip-active" onclick="setMemberFilter('active', this)">Active</button>
+        <button class="chip" id="chip-pending" onclick="setMemberFilter('pending', this)">Pending</button>
+        <button class="chip" id="chip-expired" onclick="setMemberFilter('expired', this)">Expired</button>
       </div>
       <div class="search-wrap">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -156,7 +156,7 @@
 <!-- Renew Modal -->
 <div class="modal-overlay" id="renewModal">
   <div class="modal">
-    <h2>? Renew Membership</h2>
+    <h2>Renew Membership</h2>
     <div style="margin-bottom: var(--space-4); font-size: var(--text-sm); color: var(--text-muted);">
       Renewing for: <strong id="r_name" style="color: var(--text);"></strong>
     </div>
@@ -180,7 +180,7 @@
     </div>
     <div class="form-group" style="background: var(--surface-2); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-md); display:flex; justify-content:space-between; align-items:center;">
       <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: 600;">Total Fee</span>
-      <span id="r_fee" style="font-size: var(--text-lg); font-family: var(--font-display); font-weight: 800; color: var(--red);">?1,500</span>
+      <span id="r_fee" style="font-size: var(--text-lg); font-family: var(--font-display); font-weight: 800; color: var(--red);">&#8377;1,500</span>
     </div>
     <div class="form-group" style="margin-top: var(--space-4);">
       <label>New Start Date *</label>
@@ -298,7 +298,7 @@ function renderCards(members) {
         <div class="card-row"><span class="lbl"><i data-lucide="calendar" style="width:12px;height:12px;"></i> Start</span><span class="val">${m.start_date || '—'}</span></div>
         <div class="card-row"><span class="lbl"><i data-lucide="clock" style="width:12px;height:12px;"></i> Expires</span><span class="val">${expiry}</span></div>
         <div class="card-row"><span class="lbl"><i data-lucide="activity" style="width:12px;height:12px;"></i> Status</span><span class="val"><span class="badge ${m.status}">${m.status}</span></span></div>
-        <button class="btn-secondary" style="margin-top:var(--space-3);width:100%;padding:8px;font-size:var(--text-xs);" onclick="openRenewModal('${m.id}', '${(m.name || '').replace(/'/g, "\\'")}', '${m.plan}')">? Renew</button>
+        <button class="btn-secondary" style="margin-top:var(--space-3);width:100%;padding:8px;font-size:var(--text-xs);" onclick="openRenewModal('${m.id}', '${(m.name || '').replace(/'/g, "\\'")}', '${m.plan}')">Renew</button>
       </div>
     </div>`;
   }).join('');
