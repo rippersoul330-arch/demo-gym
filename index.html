@@ -391,49 +391,55 @@ async function loadDashboard() {
     document.getElementById('expiringMembersContainer').innerHTML = expiringHtml || '<div style="color:#aaa;font-size:12px;">No members expiring soon.</div>';
 
     // Update Plan Chart
-    if (planChartInstance) planChartInstance.destroy();
-    const pCtx = document.getElementById('planChart').getContext('2d');
-    planChartInstance = new Chart(pCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Monthly','Quarterly','Half-Yearly','Yearly'],
-        datasets: [{
-          data: [plansCount.monthly, plansCount.quarterly, plansCount.half_yearly, plansCount.yearly],
-          backgroundColor:['#C8102E','#5b9cf6','#4caf7d','#f5a623'],
-          borderWidth:0, hoverOffset:6,
-        }]
-      },
-      options: {
-        responsive:true,maintainAspectRatio:false, cutout:'68%',
-        plugins:{ legend:{position:'bottom',labels:{color:'#8a8080',font:{size:11},padding:12,boxWidth:10,boxHeight:10,useBorderRadius:true}}, tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}}
-      }
-    });
+    const planCanvas = document.getElementById('planChart');
+    if (planCanvas) {
+      if (planChartInstance) planChartInstance.destroy();
+      const pCtx = planCanvas.getContext('2d');
+      planChartInstance = new Chart(pCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Monthly','Quarterly','Half-Yearly','Yearly'],
+          datasets: [{
+            data: [plansCount.monthly, plansCount.quarterly, plansCount.half_yearly, plansCount.yearly],
+            backgroundColor:['#C8102E','#5b9cf6','#4caf7d','#f5a623'],
+            borderWidth:0, hoverOffset:6,
+          }]
+        },
+        options: {
+          responsive:true,maintainAspectRatio:false, cutout:'68%',
+          plugins:{ legend:{position:'bottom',labels:{color:'#8a8080',font:{size:11},padding:12,boxWidth:10,boxHeight:10,useBorderRadius:true}}, tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}}
+        }
+      });
+    }
 
     // Dynamic Revenue Chart
-    if (revenueChartInstance) revenueChartInstance.destroy();
-    const rCtx = document.getElementById('revenueChart').getContext('2d');
-    revenueChartInstance = new Chart(rCtx, {
-      type: 'bar',
-      data: {
-        labels: revLabels,
-        datasets: [{
-          label: 'Revenue',
-          data: revData,
-          backgroundColor: (ctx) => {
-            const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
-            g.addColorStop(0,'rgba(200,16,46,0.85)');
-            g.addColorStop(1,'rgba(200,16,46,0.2)');
-            return g;
-          },
-          borderRadius: 6, borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:(ctx)=>'₹'+ctx.raw.toLocaleString('en-IN')}}},
-        scales:{x:{grid:{display:false},ticks:{color:'#8a8080',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8080',font:{size:11},callback:(v)=>'₹'+(v/1000)+'K'}}}
-      }
-    });
+    const revenueCanvas = document.getElementById('revenueChart');
+    if (revenueCanvas) {
+      if (revenueChartInstance) revenueChartInstance.destroy();
+      const rCtx = revenueCanvas.getContext('2d');
+      revenueChartInstance = new Chart(rCtx, {
+        type: 'bar',
+        data: {
+          labels: revLabels,
+          datasets: [{
+            label: 'Revenue',
+            data: revData,
+            backgroundColor: (ctx) => {
+              const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+              g.addColorStop(0,'rgba(200,16,46,0.85)');
+              g.addColorStop(1,'rgba(200,16,46,0.2)');
+              return g;
+            },
+            borderRadius: 6, borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1717',titleColor:'#f0eded',bodyColor:'#8a8080',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:(ctx)=>'₹'+ctx.raw.toLocaleString('en-IN')}}},
+          scales:{x:{grid:{display:false},ticks:{color:'#8a8080',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8080',font:{size:11},callback:(v)=>'₹'+(v/1000)+'K'}}}
+        }
+      });
+    }
 
     // Render member growth chart
     setMemberChartRange(6, 'btn-mem-6m');

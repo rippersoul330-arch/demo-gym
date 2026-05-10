@@ -258,6 +258,8 @@ function calcExpiry(start, plan) {
 }
 
 function updateEndDate() {
+  const endInput = document.getElementById('f_end');
+  if (!endInput) return;
   const start = document.getElementById('f_start').value;
   const planKey = document.getElementById('f_plan').value;
   const showCustom = planKey === 'custom';
@@ -268,9 +270,9 @@ function updateEndDate() {
   const plan = buildPlanValue(planKey, customName, customDays);
   if (start && planKey && (!showCustom || (customName && customDays > 0))) {
     const end = calcExpiry(start, plan);
-    document.getElementById('f_end').value = end !== '—' ? end : '';
+    endInput.value = end !== '—' ? end : '';
   } else {
-    document.getElementById('f_end').value = '';
+    endInput.value = '';
   }
 }
 
