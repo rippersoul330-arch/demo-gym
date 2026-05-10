@@ -151,12 +151,12 @@
         <div class="chart-header">
           <div>
             <div class="chart-title">Revenue Overview</div>
-            <div class="chart-subtitle">Monthly collections in ₹ (Last 6 Months)</div>
+            <div class="chart-subtitle" id="revChartSubtitle">Monthly collections in ₹ (Last 6 Months)</div>
           </div>
           <div class="chart-tabs">
-            <button class="chart-tab active">6M</button>
-            <button class="chart-tab">1Y</button>
-            <button class="chart-tab">All</button>
+            <button id="btn-rev-6m" class="chart-tab active" onclick="setRevenueChartRange(6, 'btn-rev-6m')">6M</button>
+            <button id="btn-rev-1y" class="chart-tab" onclick="setRevenueChartRange(12, 'btn-rev-1y')">1Y</button>
+            <button id="btn-rev-all" class="chart-tab" onclick="setRevenueChartRange(24, 'btn-rev-all')">All</button>
           </div>
         </div>
         <div class="chart-wrap">
@@ -283,11 +283,13 @@ function showToast(msg, type='success') {
 
 let planChartInstance = null;
 let revenueChartInstance = null;
+let allMembers = [];
 
 async function loadDashboard() {
   try {
     const res = await fetch(`${SUPABASE_URL}/members?order=created_at.desc`, { headers });
     const members = await res.json();
+    allMembers = members;
     
     // Process Data
     const now = new Date();
@@ -539,6 +541,47 @@ async function submitRenewal() {
 }
 
 loadDashboard();
+
+function setRevenueChartRange(months, btnId) {
+  ['btn-rev-6m', 'btn-rev-1y', 'btn-rev-all'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('active');
+  });
+  if(btnId) document.getElementById(btnId).classList.add('active');
+  
+  const subtitle = document.getElementById('revChartSubtitle');
+  if(subtitle) subtitle.textContent = `Monthly collections in ₹ (Last ${months === 24 ? '2 Years' : (months === 12 ? '1 Year' : '6 Months')})`;
+
+  const now = new Date();
+  const revLabels = [];
+  const revData = [];
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  for(let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    revLabels.push(months > 6 ? `${monthNames[d.getMonth()]} '${d.getFullYear().toString().slice(2)}` : monthNames[d.getMonth()]);
+    revData.push(0);
+  }
+
+  allMembers.forEach(m => {
+    if (m.status === 'active' && m.start_date) {
+      const start = new Date(m.start_date);
+      const price = PLAN_PRICES[m.plan] || 0;
+      for(let i=0; i<months; i++) {
+        const targetMonthDate = new Date(now.getFullYear(), now.getMonth() - ((months-1)-i), 1);
+        if (start.getMonth() === targetMonthDate.getMonth() && start.getFullYear() === targetMonthDate.getFullYear()) {
+          revData[i] += price;
+        }
+      }
+    }
+  });
+
+  if (revenueChartInstance) {
+    revenueChartInstance.data.labels = revLabels;
+    revenueChartInstance.data.datasets[0].data = revData;
+    revenueChartInstance.update();
+  }
+}
 </script>
 </body>
 </html>
