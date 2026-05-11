@@ -333,7 +333,6 @@ function renderCards(members) {
       <div class="card-plan">${planLabel}</div>
       <div class="card-info">
         <div class="card-row"><span class="lbl"><i data-lucide="phone" style="width:12px;height:12px;"></i> Phone</span><span class="val">${m.phone || '—'}</span></div>
-        ${m.email ? `<div class="card-row"><span class="lbl"><i data-lucide="mail" style="width:12px;height:12px;"></i> Email</span><span class="val">${m.email}</span></div>` : ''}
         <div class="card-row"><span class="lbl"><i data-lucide="calendar" style="width:12px;height:12px;"></i> Start</span><span class="val">${m.start_date || '—'}</span></div>
         <div class="card-row"><span class="lbl"><i data-lucide="clock" style="width:12px;height:12px;"></i> Expires</span><span class="val">${expiry}</span></div>
         <div class="card-row"><span class="lbl"><i data-lucide="activity" style="width:12px;height:12px;"></i> Status</span><span class="val"><span class="badge ${m.status}">${m.status}</span></span></div>
