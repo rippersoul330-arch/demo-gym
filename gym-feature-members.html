@@ -38,6 +38,24 @@
   .search-wrap input { width: 100%; padding-left: 36px; box-sizing: border-box; }
   .search-wrap .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; height: 16px; pointer-events: none; }
   .member-count { font-size: var(--text-xs); color: var(--text-muted); font-weight: 600; flex-shrink: 0; padding: 6px 12px; background: var(--surface-2); border-radius: var(--radius-full); border: 1px solid var(--border); }
+  .new-member-btn {
+    background: linear-gradient(135deg, var(--red), var(--red-deep));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 12px 20px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-red);
+  }
+  .new-member-btn:hover { opacity: 0.9; }
+  .new-member-btn svg { width: 16px; height: 16px; }
+  .form-card.hidden { display: none; }
   @media(max-width:600px){.grid,.grid.four{grid-template-columns:1fr}.filter-bar{flex-direction:column;align-items:stretch}.search-wrap{min-width:100%}}
 </style>
 </head>
@@ -78,50 +96,74 @@
     </div>
     <div class="topbar-right">
       <div class="date-chip" id="topDate"></div>
+      <button class="new-member-btn" onclick="toggleAddMemberForm()"><i data-lucide="user-plus"></i> New Member</button>
     </div>
   </div>
 
   <div class="content">
     <!-- Add Member Form -->
-    <div class="form-card">
+    <div class="form-card hidden" id="addMemberForm">
       <h2><i data-lucide="user-plus" style="width: 20px; height: 20px; color: var(--red);"></i> Add New Member</h2>
+      <h3 style="font-size:var(--text-lg);font-weight:700;margin:2px 0 14px 0;">Personal Information</h3>
       <div class="grid">
         <div>
           <label>Full Name *</label>
           <input id="f_name" placeholder="John Doe"/>
         </div>
         <div>
-          <label>Phone *</label>
-          <input id="f_phone" placeholder="+1 234 567 8900"/>
+          <label>Phone Number *</label>
+          <input id="f_phone" placeholder="10 digit number"/>
         </div>
         <div>
-          <label>Date of Birth</label>
-          <input id="f_dob" type="date"/>
-        </div>
-      </div>
-      <div class="grid four" style="margin-top:14px">
-        <div>
-          <label>Membership Plan *</label>
-          <select id="f_plan" onchange="updateEndDate()">
-            <option value="">Select plan</option>
-            <option value="monthly">Monthly</option>
-            <option value="quarterly">Quarterly (3 mo)</option>
-            <option value="half_yearly">Half-Yearly (6 mo)</option>
-            <option value="yearly">Yearly</option>
-            <option value="custom">Custom</option>
+          <label>Fitness Goal</label>
+          <select id="f_goal">
+            <option value="">Select a goal</option>
+            <option value="weight_loss">Weight Loss</option>
+            <option value="muscle_gain">Muscle Gain</option>
+            <option value="general_fitness">General Fitness</option>
+            <option value="strength">Strength</option>
           </select>
         </div>
-        <div id="f_custom_wrap" style="display:none;">
-          <label>Custom Plan Name *</label>
-          <input id="f_custom_name" placeholder="Student Plan" onchange="updateEndDate()"/>
+        <div>
+          <label>Fitness Level</label>
+          <select id="f_level">
+            <option value="">Select level</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
         </div>
-        <div id="f_custom_days_wrap" style="display:none;">
-          <label>Custom Duration (Days) *</label>
-          <input id="f_custom_days" type="number" min="1" placeholder="45" onchange="updateEndDate()"/>
+      </div>
+
+      <h3 style="font-size:var(--text-lg);font-weight:700;margin:20px 0 14px 0;">Membership Details</h3>
+      <div class="grid four" style="margin-top:0;">
+        <div>
+          <label>Duration *</label>
+          <select id="f_duration" onchange="updateEndDate()">
+            <option value="">Select duration</option>
+            <option value="monthly">1 Month</option>
+            <option value="quarterly">3 Months</option>
+            <option value="half_yearly">6 Months</option>
+            <option value="yearly">12 Months</option>
+          </select>
         </div>
         <div>
-          <label>Start Date *</label>
+          <label>Join Date *</label>
+          <input id="f_join" type="date"/>
+        </div>
+        <div>
+          <label>Membership Start *</label>
           <input id="f_start" type="date" onchange="updateEndDate()"/>
+        </div>
+        <div>
+          <label>Membership End *</label>
+          <input id="f_end" type="date" disabled style="opacity: 0.5; cursor: not-allowed;"/>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:14px;">
+        <div>
+          <label>Total Amount *</label>
+          <input id="f_amount" disabled style="opacity: 0.7; cursor: not-allowed;" value="₹0"/>
         </div>
       </div>
       <div class="btn-row">
@@ -242,6 +284,7 @@ function showToast(msg, type='success') {
 
 function initDate() {
   const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f_join').value = today;
   document.getElementById('f_start').value = today;
   updateEndDate();
 }
@@ -261,14 +304,10 @@ function updateEndDate() {
   const endInput = document.getElementById('f_end');
   if (!endInput) return;
   const start = document.getElementById('f_start').value;
-  const planKey = document.getElementById('f_plan').value;
-  const showCustom = planKey === 'custom';
-  document.getElementById('f_custom_wrap').style.display = showCustom ? 'block' : 'none';
-  document.getElementById('f_custom_days_wrap').style.display = showCustom ? 'block' : 'none';
-  const customName = document.getElementById('f_custom_name').value.trim();
-  const customDays = Number(document.getElementById('f_custom_days').value);
-  const plan = buildPlanValue(planKey, customName, customDays);
-  if (start && planKey && (!showCustom || (customName && customDays > 0))) {
+  const planKey = document.getElementById('f_duration').value;
+  const plan = planKey;
+  document.getElementById('f_amount').value = formatINR(PLAN_PRICES[planKey] || 0);
+  if (start && planKey) {
     const end = calcExpiry(start, plan);
     endInput.value = end !== '—' ? end : '';
   } else {
@@ -307,6 +346,15 @@ function renderCards(members) {
 
 let allMembersData = [];
 let currentMemberFilter = 'all';
+let isAddMemberOpen = false;
+
+function toggleAddMemberForm(forceOpen = null) {
+  const form = document.getElementById('addMemberForm');
+  if (!form) return;
+  isAddMemberOpen = forceOpen === null ? !isAddMemberOpen : !!forceOpen;
+  form.classList.toggle('hidden', !isAddMemberOpen);
+  if (isAddMemberOpen) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 function setMemberFilter(status, el) {
   currentMemberFilter = status;
@@ -343,31 +391,54 @@ async function loadMembers() {
 async function addMember() {
   const name = document.getElementById('f_name').value.trim();
   const phone = document.getElementById('f_phone').value.trim();
-  const dob = document.getElementById('f_dob').value;
-  const planKey = document.getElementById('f_plan').value;
-  const customName = document.getElementById('f_custom_name').value.trim();
-  const customDays = Number(document.getElementById('f_custom_days').value);
-  const plan = buildPlanValue(planKey, customName, customDays);
+  const goal = document.getElementById('f_goal').value;
+  const level = document.getElementById('f_level').value;
+  const joinDate = document.getElementById('f_join').value;
+  const planKey = document.getElementById('f_duration').value;
+  const plan = planKey;
   const start = document.getElementById('f_start').value;
   const end = calcExpiry(start, plan);
+  const totalAmount = PLAN_PRICES[planKey] || 0;
 
   if (!name || !phone || !planKey || !start) return showToast('Please fill in all required fields (*)', 'error');
-  if (planKey === 'custom' && (!customName || customDays <= 0)) return showToast('Please enter custom plan name and duration.', 'error');
 
   const btn = document.getElementById('addBtn');
   btn.disabled = true; btn.textContent = 'Adding...';
 
-  const payload = { name, phone, date_of_birth: dob || null, plan, start_date: start, end_date: end, status: 'active' };
+  const fullPayload = {
+    name,
+    phone,
+    plan,
+    start_date: start,
+    end_date: end,
+    status: 'active',
+    join_date: joinDate || null,
+    fitness_goal: goal || null,
+    fitness_level: level || null,
+    total_amount: totalAmount || null
+  };
+  const fallbackPayload = { name, phone, plan, start_date: start, end_date: end, status: 'active' };
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/members`, { method: 'POST', headers, body: JSON.stringify(payload) });
+    let res = await fetch(`${SUPABASE_URL}/members`, { method: 'POST', headers, body: JSON.stringify(fullPayload) });
+    if (!res.ok) {
+      const rawError = await res.text();
+      if (/column|schema cache|does not exist/i.test(rawError)) {
+        res = await fetch(`${SUPABASE_URL}/members`, { method: 'POST', headers, body: JSON.stringify(fallbackPayload) });
+      } else {
+        throw new Error(rawError);
+      }
+    }
     if (!res.ok) throw new Error(await res.text());
     showToast('Member added successfully!');
-    ['f_name','f_phone','f_dob'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f_plan').value = '';
-    document.getElementById('f_custom_name').value = '';
-    document.getElementById('f_custom_days').value = '';
+    ['f_name','f_phone'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f_goal').value = '';
+    document.getElementById('f_level').value = '';
+    document.getElementById('f_duration').value = '';
+    document.getElementById('f_end').value = '';
+    document.getElementById('f_amount').value = '₹0';
     initDate();
+    toggleAddMemberForm(false);
     loadMembers();
   } catch (e) {
     showToast(e.message, 'error');
